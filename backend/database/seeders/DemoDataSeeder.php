@@ -16,6 +16,25 @@ class DemoDataSeeder extends Seeder
      */
     public function run(): void
     {
+        // ── Super Admin User ─────────────────────────────────
+        $superAdmin = User::firstOrCreate(
+            ['mobile' => '03009999999'],
+            [
+                'name' => 'Super Admin',
+                'email' => 'admin@ekhata.pk',
+                'mobile' => '03009999999',
+                'password' => Hash::make('admin123'),
+                'language_pref' => 'en',
+                'is_active' => true,
+            ]
+        );
+
+        if (!$superAdmin->hasRole('Super Admin')) {
+            $superAdmin->assignRole('Super Admin');
+        }
+
+        $this->command->info('Super Admin created: mobile=03009999999 / password=admin123');
+
         // ── Demo User ────────────────────────────────────────
         $user = User::firstOrCreate(
             ['email' => 'demo@ekhata.pk'],
@@ -128,7 +147,7 @@ class DemoDataSeeder extends Seeder
             }
         }
 
-        $this->command->info('Demo data seeded: 1 user, 1 tenant, 5 parties with transactions.');
+        $this->command->info('Demo data seeded: 1 super admin, 1 demo user, 1 tenant, 5 parties with transactions.');
     }
 
     protected function seedTransactions(Party $party, User $user, Tenant $tenant): void

@@ -13,6 +13,7 @@ export default function AppLayout() {
       <Stack.Screen name="share" />
       <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Notifications' }} />
       <Stack.Screen name="logs" />
+      <Stack.Screen name="admin" />
     </Stack>
   );
 }

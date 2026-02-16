@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\ShareController;
 use App\Http\Controllers\Api\V1\SessionController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\LogController;
+use App\Http\Controllers\Api\V1\SystemSettingsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -127,6 +128,19 @@ Route::prefix('v1')->group(function () {
                 Route::get('system', [LogController::class, 'system']);
                 Route::get('access', [LogController::class, 'access']);
             });
+        });
+
+        // ──────────────────────────────────────────────────────
+        // Super Admin Routes (no tenant context needed)
+        // ──────────────────────────────────────────────────────
+        Route::prefix('admin')->group(function () {
+            Route::get('dashboard', [SystemSettingsController::class, 'dashboard']);
+            Route::get('settings', [SystemSettingsController::class, 'index']);
+            Route::put('settings', [SystemSettingsController::class, 'update']);
+            Route::get('settings/{key}', [SystemSettingsController::class, 'show']);
+            Route::get('users', [SystemSettingsController::class, 'users']);
+            Route::put('users/{id}/toggle-active', [SystemSettingsController::class, 'toggleUserActive']);
+            Route::get('tenants', [SystemSettingsController::class, 'tenants']);
         });
     });
 });

@@ -8,6 +8,7 @@ interface User {
   mobile: string;
   avatar_url: string | null;
   language_pref: 'en' | 'ur';
+  roles: { id: number; name: string }[];
   tenants: Tenant[];
 }
 
@@ -25,7 +26,7 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
 
-  login: (credentials: { email?: string; mobile?: string; password: string }) => Promise<void>;
+  login: (credentials: { mobile: string; password: string }) => Promise<void>;
   register: (data: { name: string; email?: string; mobile: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;

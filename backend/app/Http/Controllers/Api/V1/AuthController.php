@@ -63,17 +63,15 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'login' => 'required|string', // email or mobile
+            'mobile' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $request->login)
-            ->orWhere('mobile', $request->login)
-            ->first();
+        $user = User::where('mobile', $request->mobile)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'login' => ['The provided credentials are incorrect.'],
+                'mobile' => ['The provided credentials are incorrect.'],
             ]);
         }
 
@@ -88,6 +86,8 @@ class AuthController extends Controller
         $session = $this->sessionService->createSession($user, $request, $token->accessToken->id);
 
         $this->activityLog->logAction('login', 'User logged in');
+
+        $user->load('roles', 'tenants');
 
         return response()->json([
             'success' => true,
@@ -134,7 +134,7 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         $user = $request->user();
-        $user->load('tenants');
+        $user->load('roles', 'tenants');
 
         return response()->json([
             'success' => true,

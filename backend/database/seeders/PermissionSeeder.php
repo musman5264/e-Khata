@@ -30,6 +30,11 @@ class PermissionSeeder extends Seeder
             'send_payment',
             'view_reports',
             'view_audit_log',
+            // Super Admin permissions
+            'manage_system_settings',
+            'manage_all_tenants',
+            'manage_all_users',
+            'view_system_logs',
         ];
 
         foreach ($permissions as $permission) {
@@ -40,9 +45,28 @@ class PermissionSeeder extends Seeder
 
         // ── Role → Permission Mapping ─────────────────────────
 
-        // Owner: all permissions
+        // Super Admin: all permissions (system-wide access)
+        $superAdmin = Role::findByName('Super Admin', 'web');
+        $superAdmin->syncPermissions($permissions);
+
+        // Owner: all tenant-level permissions
         $owner = Role::findByName('Owner', 'web');
-        $owner->syncPermissions($permissions);
+        $owner->syncPermissions([
+            'manage_tenant',
+            'manage_team',
+            'create_party',
+            'edit_party',
+            'delete_party',
+            'create_transaction',
+            'edit_transaction',
+            'delete_transaction',
+            'view_ledger',
+            'share_ledger',
+            'collect_payment',
+            'send_payment',
+            'view_reports',
+            'view_audit_log',
+        ]);
 
         // Manager: all except manage_tenant, manage_team, view_audit_log
         $manager = Role::findByName('Manager', 'web');

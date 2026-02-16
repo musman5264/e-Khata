@@ -147,5 +147,17 @@
     "language": "Language",
     "security": "Security",
     "about": "About"
+  },
+  "admin": {
+    "title": "Administration",
+    "dashboard": "Admin Dashboard",
+    "systemSettings": "System Settings",
+    "manageUsers": "Manage Users",
+    "manageBusinesses": "Manage Businesses",
+    "totalUsers": "Total Users",
+    "activeUsers": "Active Users",
+    "totalBusinesses": "Total Businesses",
+    "settingsUpdated": "System settings updated successfully",
+    "mandatory": "This setting is mandatory"
   }
 }
