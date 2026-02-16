@@ -91,6 +91,11 @@ e-Khata is a comprehensive digital ledger and bookkeeping application built with
 - ✅ Jest testing configuration
 
 #### Deployment Options
+- ✅ **Local Development with XAMPP** (Windows)
+  - Complete XAMPP deployment guide
+  - Uses XAMPP PostgreSQL or standalone
+  - Perfect for local testing and development
+  - Network access for testing on mobile devices
 - ✅ **Shared Hosting Support** (Primary deployment method)
   - Comprehensive shared hosting guide
   - PM2 process manager setup
@@ -105,6 +110,7 @@ e-Khata is a comprehensive digital ledger and bookkeeping application built with
 - ✅ Comprehensive README
 - ✅ API documentation with Swagger/OpenAPI
 - ✅ Detailed API usage guide (API_DOCS.md)
+- ✅ XAMPP/local deployment guide (XAMPP_DEPLOYMENT.md)
 - ✅ Shared hosting deployment guide (SHARED_HOSTING.md)
 - ✅ Contributing guidelines
 - ✅ Changelog
@@ -162,7 +168,26 @@ All endpoints are documented with Swagger at `/api`:
 
 ## How to Use
 
-### Deployment on Shared Hosting (Recommended)
+### Local Development with XAMPP (Windows)
+
+For local development and testing on Windows:
+
+1. **Install Node.js** (required - v18.x+)
+2. **Start PostgreSQL** in XAMPP Control Panel
+3. **Clone and setup**:
+   ```cmd
+   cd C:\xampp\htdocs
+   git clone <repo>
+   cd e-Khata
+   npm install
+   ```
+4. **Configure `.env`** with PostgreSQL credentials
+5. **Build and start**: `npm run build && npm run start:dev`
+6. **Access**: http://localhost:3000
+
+See [XAMPP_DEPLOYMENT.md](./XAMPP_DEPLOYMENT.md) for complete instructions.
+
+### Deployment on Shared Hosting (Production)
 
 For most users deploying on shared hosting:
 
@@ -174,7 +199,7 @@ For most users deploying on shared hosting:
 
 See [SHARED_HOSTING.md](./SHARED_HOSTING.md) for complete instructions.
 
-### Quick Start (Local Development)
+### Quick Start (Local Development - Any OS)
 
 1. **Using Quick Start Script**:
    ```bash

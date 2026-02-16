@@ -100,6 +100,26 @@ e-Khata is a comprehensive digital khata (ledger) system designed to simplify fi
    - API: http://localhost:3000
    - Swagger Documentation: http://localhost:3000/api
 
+### Local Development with XAMPP
+
+**For Windows users who want to use XAMPP:**
+
+See the complete [XAMPP Deployment Guide](./XAMPP_DEPLOYMENT.md) for step-by-step instructions including:
+- Using XAMPP's PostgreSQL database
+- Setting up Node.js alongside XAMPP
+- Running the application locally
+- Accessing from other devices on your network
+- Troubleshooting common issues
+
+Quick start:
+```bash
+# From XAMPP htdocs folder
+cd C:\xampp\htdocs\e-Khata
+npm install
+npm run build
+npm run start:dev
+```
+
 ### Deployment on Shared Hosting
 
 **Important:** This application is designed to work on shared hosting environments. Docker is **optional** and only needed if you have VPS/dedicated server access.
@@ -254,24 +274,33 @@ e-Khata/
 ├── docker-compose.yml      # Docker configuration (optional)
 ├── Dockerfile              # Docker image definition (optional)
 ├── SHARED_HOSTING.md       # Shared hosting deployment guide
+├── XAMPP_DEPLOYMENT.md     # XAMPP/local development guide
 └── package.json            # Dependencies
 ```
 
 ## Deployment Options
 
-### Option 1: Shared Hosting (Recommended for Most Users)
+### Option 1: Local Development with XAMPP (Windows)
+
+For local development on Windows using XAMPP:
+- See [XAMPP Deployment Guide](./XAMPP_DEPLOYMENT.md)
+- Uses XAMPP's PostgreSQL or standalone PostgreSQL
+- Perfect for learning and testing
+- Access from your local network
+
+### Option 2: Shared Hosting (Recommended for Production)
 
 See the [Shared Hosting Deployment Guide](./SHARED_HOSTING.md) for detailed instructions on deploying to:
 - Hostinger, Bluehost, SiteGround, A2 Hosting
 - Any cPanel/Plesk-based hosting
 - Shared hosting with Node.js support
 
-### Option 2: VPS/Dedicated Server with Docker
+### Option 3: VPS/Dedicated Server with Docker
 
 Docker deployment is only suitable if you have root access and Docker installed.
 See the "Using Docker" section above.
 
-### Option 3: Cloud Platforms
+### Option 4: Cloud Platforms
 
 Alternative deployment options:
 - Heroku
