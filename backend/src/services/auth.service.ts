@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { config } from '../config';
-import User, { IUser } from '../models/User';
+import User from '../models/User';
 import Session from '../models/Session';
 import logger from '../utils/logger';
 import { sendOTP, verifyOTP } from './firebase.service';
@@ -27,7 +27,7 @@ export class AuthService {
     return jwt.sign(
       { id: userId, tenantId, sessionId },
       config.jwt.secret,
-      { expiresIn: config.jwt.expire }
+      { expiresIn: config.jwt.expire } as jwt.SignOptions
     );
   }
 
@@ -107,7 +107,7 @@ export class AuthService {
       );
 
       // Remove password from response
-      const userObj = user.toObject();
+      const userObj = user.toObject() as any;
       delete userObj.password;
 
       logger.info(`User logged in: ${user.email}`);

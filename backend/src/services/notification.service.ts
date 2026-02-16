@@ -1,5 +1,4 @@
 import Notification, { NotificationType, NotificationStatus } from '../models/Notification';
-import { sendPushNotification } from './firebase.service';
 import logger from '../utils/logger';
 
 export interface NotificationData {

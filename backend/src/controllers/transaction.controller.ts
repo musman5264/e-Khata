@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { validationResult } from 'express-validator';
 import { AuthRequest } from '../middleware/auth';
-import Transaction, { TransactionType, PaymentMethod } from '../models/Transaction';
+import Transaction, { TransactionType } from '../models/Transaction';
 import Party from '../models/Party';
 import { EasypaisaService } from '../services/easypaisa.service';
 import { JazzCashService } from '../services/jazzcash.service';

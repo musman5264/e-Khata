@@ -16,7 +16,7 @@ const deviceDetector = new DeviceDetector();
 
 export const captureDeviceInfo = (
   req: DeviceRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): void => {
   try {

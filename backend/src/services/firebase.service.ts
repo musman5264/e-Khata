@@ -27,7 +27,7 @@ export const initializeFirebase = (): void => {
   }
 };
 
-export const verifyOTP = async (phoneNumber: string, otp: string): Promise<boolean> => {
+export const verifyOTP = async (phoneNumber: string, _otp: string): Promise<boolean> => {
   try {
     if (!firebaseApp) {
       logger.error('Firebase not initialized');
