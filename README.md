@@ -49,8 +49,10 @@ e-Khata is a comprehensive digital khata (ledger) system designed to simplify fi
 ### Prerequisites
 
 - Node.js 18.x or higher
-- PostgreSQL 15.x or higher
+- PostgreSQL 15.x or higher (or access to a PostgreSQL database)
 - npm or yarn
+
+**Note:** Docker is optional and only needed for VPS/dedicated servers. For shared hosting, see [Shared Hosting Deployment Guide](./SHARED_HOSTING.md).
 
 ### Installation
 
@@ -98,7 +100,49 @@ e-Khata is a comprehensive digital khata (ledger) system designed to simplify fi
    - API: http://localhost:3000
    - Swagger Documentation: http://localhost:3000/api
 
-### Using Docker
+### Deployment on Shared Hosting
+
+**Important:** This application is designed to work on shared hosting environments. Docker is **optional** and only needed if you have VPS/dedicated server access.
+
+#### Shared Hosting Deployment Steps:
+
+1. **Upload files via FTP/SFTP**
+   - Upload all files except `node_modules/`, `.git/`, and `dist/`
+   
+2. **Install dependencies via SSH**
+   ```bash
+   cd /path/to/e-Khata
+   npm install --production
+   ```
+
+3. **Build the application**
+   ```bash
+   npm run build
+   ```
+
+4. **Configure environment**
+   - Create `.env` file with your hosting database credentials
+   - Most shared hosts provide PostgreSQL or you can use their database service
+
+5. **Start the application**
+   ```bash
+   # Use PM2 or your hosting's Node.js manager
+   npm run start:prod
+   
+   # Or with PM2 (recommended for shared hosting)
+   pm2 start dist/main.js --name ekhata
+   ```
+
+6. **Set up process manager**
+   - Most shared hosting control panels (cPanel, Plesk) have Node.js application managers
+   - Configure it to run: `node dist/main.js`
+   - Set environment variables in the control panel
+
+### Using Docker (Optional - VPS/Dedicated Server Only)
+
+**Note:** Docker is NOT compatible with shared hosting. Use the shared hosting deployment method above instead.
+
+For VPS or dedicated servers with Docker support:
 
 1. **Build and run with Docker Compose**
    ```bash
@@ -206,10 +250,35 @@ e-Khata/
 │   ├── app.module.ts       # Root module
 │   └── main.ts             # Application entry point
 ├── logs/                    # Application logs
-├── docker-compose.yml      # Docker configuration
-├── Dockerfile              # Docker image definition
+├── scripts/                 # Utility scripts
+├── docker-compose.yml      # Docker configuration (optional)
+├── Dockerfile              # Docker image definition (optional)
+├── SHARED_HOSTING.md       # Shared hosting deployment guide
 └── package.json            # Dependencies
 ```
+
+## Deployment Options
+
+### Option 1: Shared Hosting (Recommended for Most Users)
+
+See the [Shared Hosting Deployment Guide](./SHARED_HOSTING.md) for detailed instructions on deploying to:
+- Hostinger, Bluehost, SiteGround, A2 Hosting
+- Any cPanel/Plesk-based hosting
+- Shared hosting with Node.js support
+
+### Option 2: VPS/Dedicated Server with Docker
+
+Docker deployment is only suitable if you have root access and Docker installed.
+See the "Using Docker" section above.
+
+### Option 3: Cloud Platforms
+
+Alternative deployment options:
+- Heroku
+- Railway  
+- Render
+- DigitalOcean App Platform
+- AWS Lightsail
 
 ### Running Tests
 ```bash
@@ -252,6 +321,7 @@ npm run format
 - [ ] Report generation (PDF/Excel)
 - [ ] Data analytics dashboard
 - [ ] Backup and restore functionality
+- [ ] cPanel/Plesk plugin for easier deployment
 
 ## Contributing
 

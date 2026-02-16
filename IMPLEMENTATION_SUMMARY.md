@@ -90,15 +90,22 @@ e-Khata is a comprehensive digital ledger and bookkeeping application built with
 - ✅ ESLint and Prettier setup
 - ✅ Jest testing configuration
 
-#### Docker Support
-- ✅ Dockerfile for containerization
-- ✅ Docker Compose with PostgreSQL
-- ✅ Production-ready configuration
+#### Deployment Options
+- ✅ **Shared Hosting Support** (Primary deployment method)
+  - Comprehensive shared hosting guide
+  - PM2 process manager setup
+  - cPanel/Plesk instructions
+  - Apache/Nginx reverse proxy configuration
+- ✅ **Docker Support** (Optional - for VPS/dedicated servers)
+  - Dockerfile for containerization
+  - Docker Compose with PostgreSQL
+  - Production-ready configuration
 
 #### Documentation
 - ✅ Comprehensive README
 - ✅ API documentation with Swagger/OpenAPI
 - ✅ Detailed API usage guide (API_DOCS.md)
+- ✅ Shared hosting deployment guide (SHARED_HOSTING.md)
 - ✅ Contributing guidelines
 - ✅ Changelog
 
@@ -155,7 +162,19 @@ All endpoints are documented with Swagger at `/api`:
 
 ## How to Use
 
-### Quick Start
+### Deployment on Shared Hosting (Recommended)
+
+For most users deploying on shared hosting:
+
+1. **Upload files via FTP/SFTP**
+2. **Install dependencies via SSH**: `npm install --production`
+3. **Build**: `npm run build`
+4. **Configure `.env`** with hosting database credentials
+5. **Start**: `pm2 start dist/main.js --name ekhata`
+
+See [SHARED_HOSTING.md](./SHARED_HOSTING.md) for complete instructions.
+
+### Quick Start (Local Development)
 
 1. **Using Quick Start Script**:
    ```bash
@@ -164,12 +183,7 @@ All endpoints are documented with Swagger at `/api`:
    npm run start:dev
    ```
 
-2. **Using Docker**:
-   ```bash
-   docker-compose up -d
-   ```
-
-3. **Manual Setup**:
+2. **Manual Setup**:
    ```bash
    npm install
    cp .env.example .env
@@ -177,6 +191,14 @@ All endpoints are documented with Swagger at `/api`:
    npm run build
    npm run start:prod
    ```
+
+### Using Docker (VPS/Dedicated Server Only)
+
+**Note:** Docker requires root access and is NOT compatible with shared hosting.
+
+```bash
+docker-compose up -d
+```
 
 ### Seed Database
 
