@@ -8,7 +8,7 @@ export class CreatePaymentDto {
   @IsNotEmpty()
   method: PaymentMethod;
 
-  @ApiProperty({ example: 1000.50 })
+  @ApiProperty({ example: 1000.5 })
   @IsNumber()
   @IsNotEmpty()
   @Min(0.01)

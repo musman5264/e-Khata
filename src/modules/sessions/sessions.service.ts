@@ -42,17 +42,11 @@ export class SessionsService {
   }
 
   async deactivate(userId: string, token: string): Promise<void> {
-    await this.sessionsRepository.update(
-      { userId, token },
-      { isActive: false },
-    );
+    await this.sessionsRepository.update({ userId, token }, { isActive: false });
   }
 
   async deactivateAll(userId: string): Promise<void> {
-    await this.sessionsRepository.update(
-      { userId, isActive: true },
-      { isActive: false },
-    );
+    await this.sessionsRepository.update({ userId, isActive: true }, { isActive: false });
   }
 
   async cleanExpired(): Promise<void> {

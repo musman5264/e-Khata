@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Patch,
-  UseGuards,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
@@ -41,10 +32,7 @@ export class PaymentsController {
 
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update payment status' })
-  updateStatus(
-    @Param('id') id: string,
-    @Body() updateStatusDto: UpdatePaymentStatusDto,
-  ) {
+  updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdatePaymentStatusDto) {
     return this.paymentsService.updateStatus(
       id,
       updateStatusDto.status,

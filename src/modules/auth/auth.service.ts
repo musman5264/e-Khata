@@ -19,7 +19,8 @@ export class AuthService {
   async validateUser(mobileNumber: string, password: string): Promise<any> {
     const user = await this.usersService.findByMobileNumber(mobileNumber);
     if (user && (await bcrypt.compare(password, user.password))) {
-      const { password, ...result } = user;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _, ...result } = user;
       return result;
     }
     return null;
@@ -27,7 +28,7 @@ export class AuthService {
 
   async login(loginDto: LoginDto, deviceInfo: any) {
     const user = await this.validateUser(loginDto.mobileNumber, loginDto.password);
-    
+
     if (!user) {
       this.loggingService.logAuth({
         action: 'login_failed',
@@ -77,7 +78,7 @@ export class AuthService {
 
   async register(registerDto: RegisterDto) {
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-    
+
     const user = await this.usersService.create({
       ...registerDto,
       password: hashedPassword,
@@ -89,13 +90,14 @@ export class AuthService {
       mobileNumber: user.mobileNumber,
     });
 
-    const { password, ...result } = user;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...result } = user;
     return result;
   }
 
   async logout(userId: string, token: string) {
     await this.sessionsService.deactivate(userId, token);
-    
+
     this.loggingService.logAuth({
       action: 'logout',
       userId,

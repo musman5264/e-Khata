@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from './../src/app.module';
 
 describe('AppController (e2e)', () => {
@@ -16,9 +16,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('/api (GET) - should return Swagger documentation', () => {
-    return request(app.getHttpServer())
-      .get('/api')
-      .expect(301);
+    return request(app.getHttpServer()).get('/api').expect(301);
   });
 
   afterAll(async () => {

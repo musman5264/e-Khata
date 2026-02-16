@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Payment, PaymentMethod, PaymentStatus } from './payment.entity';
+import { Payment, PaymentStatus } from './payment.entity';
 import { LoggingService } from '../logging/logging.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import * as crypto from 'crypto';
@@ -47,7 +47,11 @@ export class PaymentsService {
     return this.paymentsRepository.findOne({ where: { id } });
   }
 
-  async updateStatus(id: string, status: PaymentStatus, gatewayResponse?: string): Promise<Payment> {
+  async updateStatus(
+    id: string,
+    status: PaymentStatus,
+    gatewayResponse?: string,
+  ): Promise<Payment> {
     const payment = await this.findOne(id);
     payment.status = status;
     if (gatewayResponse) {
@@ -73,7 +77,8 @@ export class PaymentsService {
   }
 
   // Placeholder for Easypaisa integration
-  async processEasypaisaPayment(amount: number, phoneNumber: string): Promise<any> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async processEasypaisaPayment(_amount: number, _phoneNumber: string): Promise<any> {
     // TODO: Implement actual Easypaisa API integration
     this.loggingService.log('Easypaisa payment processing initiated');
     return {
@@ -83,7 +88,8 @@ export class PaymentsService {
   }
 
   // Placeholder for JazzCash integration
-  async processJazzCashPayment(amount: number, phoneNumber: string): Promise<any> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async processJazzCashPayment(_amount: number, _phoneNumber: string): Promise<any> {
     // TODO: Implement actual JazzCash API integration
     this.loggingService.log('JazzCash payment processing initiated');
     return {

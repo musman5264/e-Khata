@@ -16,14 +16,8 @@ export class TransactionsService {
     private dataSource: DataSource,
   ) {}
 
-  async create(
-    createTransactionDto: CreateTransactionDto,
-    tenantId: string,
-  ): Promise<Transaction> {
-    const ledger = await this.ledgerService.findOne(
-      createTransactionDto.ledgerId,
-      tenantId,
-    );
+  async create(createTransactionDto: CreateTransactionDto, tenantId: string): Promise<Transaction> {
+    const ledger = await this.ledgerService.findOne(createTransactionDto.ledgerId, tenantId);
 
     if (!ledger) {
       throw new NotFoundException('Ledger not found');

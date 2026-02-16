@@ -38,15 +38,10 @@ export class NotificationsService {
     }
   }
 
-  async sendNotification(
-    userId: string,
-    title: string,
-    body: string,
-    data?: any,
-  ): Promise<void> {
+  async sendNotification(userId: string, title: string, body: string, data?: any): Promise<void> {
     try {
       const user = await this.usersService.findOne(userId);
-      
+
       if (!user.fcmToken) {
         this.loggingService.warn(`No FCM token for user ${userId}`);
         return;
@@ -67,17 +62,13 @@ export class NotificationsService {
       };
 
       const response = await admin.messaging().send(message);
-      
-      this.loggingService.log('Notification sent successfully', {
-        userId,
-        messageId: response,
-      });
-    } catch (error) {
-      this.loggingService.error(
-        'Failed to send notification',
-        error.stack,
+
+      this.loggingService.log(
+        `Notification sent successfully for user ${userId}, messageId: ${response}`,
         'NotificationsService',
       );
+    } catch (error) {
+      this.loggingService.error('Failed to send notification', error.stack, 'NotificationsService');
     }
   }
 
@@ -96,11 +87,7 @@ export class NotificationsService {
     });
   }
 
-  async sendPaymentNotification(
-    userId: string,
-    amount: number,
-    status: string,
-  ): Promise<void> {
+  async sendPaymentNotification(userId: string, amount: number, status: string): Promise<void> {
     const title = 'Payment Update';
     const body = `Payment of Rs.${amount} is ${status}`;
     await this.sendNotification(userId, title, body, {
@@ -112,6 +99,6 @@ export class NotificationsService {
 
   async registerDeviceToken(userId: string, fcmToken: string): Promise<void> {
     await this.usersService.updateFcmToken(userId, fcmToken);
-    this.loggingService.log('Device token registered', { userId });
+    this.loggingService.log(`Device token registered for user ${userId}`, 'NotificationsService');
   }
 }

@@ -8,7 +8,7 @@ export class CreateTransactionDto {
   @IsNotEmpty()
   type: TransactionType;
 
-  @ApiProperty({ example: 1000.50 })
+  @ApiProperty({ example: 1000.5 })
   @IsNumber()
   @IsNotEmpty()
   @Min(0.01)

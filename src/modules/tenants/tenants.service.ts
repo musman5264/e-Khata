@@ -14,10 +14,7 @@ export class TenantsService {
 
   async create(createTenantDto: CreateTenantDto): Promise<Tenant> {
     const existingTenant = await this.tenantsRepository.findOne({
-      where: [
-        { name: createTenantDto.name },
-        { contactNumber: createTenantDto.contactNumber },
-      ],
+      where: [{ name: createTenantDto.name }, { contactNumber: createTenantDto.contactNumber }],
     });
 
     if (existingTenant) {

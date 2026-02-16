@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { RegisterTokenDto } from './dto/register-token.dto';
@@ -28,12 +22,7 @@ export class NotificationsController {
   @Post('send')
   @ApiOperation({ summary: 'Send notification to user' })
   async sendNotification(@Body() dto: SendNotificationDto) {
-    await this.notificationsService.sendNotification(
-      dto.userId,
-      dto.title,
-      dto.body,
-      dto.data,
-    );
+    await this.notificationsService.sendNotification(dto.userId, dto.title, dto.body, dto.data);
     return { message: 'Notification sent successfully' };
   }
 }

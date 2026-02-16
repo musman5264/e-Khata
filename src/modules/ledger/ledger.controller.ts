@@ -48,11 +48,7 @@ export class LedgerController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update ledger' })
-  update(
-    @Param('id') id: string,
-    @Body() updateLedgerDto: UpdateLedgerDto,
-    @Request() req,
-  ) {
+  update(@Param('id') id: string, @Body() updateLedgerDto: UpdateLedgerDto, @Request() req) {
     return this.ledgerService.update(id, updateLedgerDto, req.user.tenantId);
   }
 
