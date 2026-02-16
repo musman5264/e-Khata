@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Http\Requests;
+
+class StorePartyRequest extends ApiFormRequest
+{
+    public function rules(): array
+    {
+        $tenantId = app('currentTenant')?->id;
+
+        return [
+            'name' => 'required|string|max:255',
+            'mobile' => "nullable|string|max:20|unique:parties,mobile,NULL,id,tenant_id,{$tenantId}",
+            'email' => 'nullable|email|max:255',
+            'address' => 'nullable|string|max:500',
+            'city' => 'nullable|string|max:100',
+            'khata_number' => 'nullable|string|max:50',
+            'book_number' => 'nullable|string|max:50',
+            'type' => 'required|in:customer,supplier,both',
+            'opening_balance' => 'nullable|numeric|min:0',
+            'opening_balance_type' => 'nullable|in:dr,cr',
+            'notes' => 'nullable|string|max:1000',
+        ];
+    }
+}
