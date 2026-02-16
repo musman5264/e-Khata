@@ -28,7 +28,7 @@ export class SessionsService {
     return this.sessionsRepository.save(session);
   }
 
-  async findByToken(token: string): Promise<Session> {
+  async findByToken(token: string): Promise<Session | null> {
     return this.sessionsRepository.findOne({
       where: { token, isActive: true },
     });

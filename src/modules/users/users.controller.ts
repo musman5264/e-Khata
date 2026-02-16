@@ -30,7 +30,7 @@ export class UsersController {
 
   @Get()
   @ApiOperation({ summary: 'Get all users in tenant' })
-  findAll(@Request() req) {
+  findAll(@Request() req: any) {
     return this.usersService.findAll(req.user.tenantId);
   }
 

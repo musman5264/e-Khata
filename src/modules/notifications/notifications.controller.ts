@@ -14,7 +14,7 @@ export class NotificationsController {
 
   @Post('register-token')
   @ApiOperation({ summary: 'Register FCM device token' })
-  async registerToken(@Body() dto: RegisterTokenDto, @Request() req) {
+  async registerToken(@Body() dto: RegisterTokenDto, @Request() req: any) {
     await this.notificationsService.registerDeviceToken(req.user.userId, dto.fcmToken);
     return { message: 'Token registered successfully' };
   }

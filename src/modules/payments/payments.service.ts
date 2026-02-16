@@ -43,7 +43,7 @@ export class PaymentsService {
     });
   }
 
-  async findOne(id: string): Promise<Payment> {
+  async findOne(id: string): Promise<Payment | null> {
     return this.paymentsRepository.findOne({ where: { id } });
   }
 
@@ -53,6 +53,10 @@ export class PaymentsService {
     gatewayResponse?: string,
   ): Promise<Payment> {
     const payment = await this.findOne(id);
+    if (!payment) {
+      throw new Error('Payment not found');
+    }
+    
     payment.status = status;
     if (gatewayResponse) {
       payment.gatewayResponse = gatewayResponse;

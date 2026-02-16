@@ -52,7 +52,7 @@ export class LedgerService {
     return ledger;
   }
 
-  async findByMobile(customerMobile: string, tenantId: string): Promise<Ledger> {
+  async findByMobile(customerMobile: string, tenantId: string): Promise<Ledger | null> {
     return this.ledgerRepository.findOne({
       where: { customerMobile, tenantId },
     });
@@ -68,8 +68,9 @@ export class LedgerService {
     await this.ledgerRepository
       .createQueryBuilder()
       .update(Ledger)
-      .set({ balance: () => `balance + ${amount}` })
+      .set({ balance: () => 'balance + :amount' })
       .where('id = :id', { id })
+      .setParameter('amount', amount)
       .execute();
   }
 

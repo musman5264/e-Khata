@@ -14,7 +14,9 @@ import { SessionsModule } from '../sessions/sessions.module';
     SessionsModule,
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'secret-key',
+      secret: process.env.JWT_SECRET || (() => {
+        throw new Error('JWT_SECRET environment variable is not set');
+      })(),
       signOptions: { expiresIn: process.env.JWT_EXPIRATION || '7d' },
     }),
   ],

@@ -45,7 +45,7 @@ export class UsersService {
     return user;
   }
 
-  async findByMobileNumber(mobileNumber: string): Promise<User> {
+  async findByMobileNumber(mobileNumber: string): Promise<User | null> {
     return this.usersRepository.findOne({
       where: { mobileNumber },
       relations: ['tenant'],

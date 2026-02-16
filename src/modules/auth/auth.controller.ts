@@ -21,7 +21,7 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({ summary: 'Login with mobile number and password' })
-  async login(@Body() loginDto: LoginDto, @Request() req) {
+  async login(@Body() loginDto: LoginDto, @Request() req: any) {
     const deviceInfo = {
       ipAddress: req.ip,
       userAgent: req.get('user-agent'),
@@ -34,7 +34,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout current user' })
-  async logout(@Request() req) {
+  async logout(@Request() req: any) {
     const token = req.headers.authorization?.split(' ')[1];
     return this.authService.logout(req.user.userId, token);
   }
@@ -43,7 +43,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
-  getProfile(@Request() req) {
+  getProfile(@Request() req: any) {
     return req.user;
   }
 }

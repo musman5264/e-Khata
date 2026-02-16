@@ -24,9 +24,14 @@ async function bootstrap() {
   });
 
   // Session management
+  const sessionSecret = process.env.SESSION_SECRET;
+  if (!sessionSecret) {
+    throw new Error('SESSION_SECRET environment variable is not set');
+  }
+
   app.use(
     session({
-      secret: process.env.SESSION_SECRET || 'secret-key',
+      secret: sessionSecret,
       resave: false,
       saveUninitialized: false,
       cookie: {

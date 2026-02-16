@@ -13,19 +13,19 @@ export class TransactionsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new transaction (debit or credit)' })
-  create(@Body() createTransactionDto: CreateTransactionDto, @Request() req) {
+  create(@Body() createTransactionDto: CreateTransactionDto, @Request() req: any) {
     return this.transactionsService.create(createTransactionDto, req.user.tenantId);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all transactions for a ledger' })
-  findAll(@Query('ledgerId') ledgerId: string, @Request() req) {
+  findAll(@Query('ledgerId') ledgerId: string, @Request() req: any) {
     return this.transactionsService.findAll(ledgerId, req.user.tenantId);
   }
 
   @Get('statistics')
   @ApiOperation({ summary: 'Get transaction statistics for a ledger' })
-  getStatistics(@Query('ledgerId') ledgerId: string, @Request() req) {
+  getStatistics(@Query('ledgerId') ledgerId: string, @Request() req: any) {
     return this.transactionsService.getStatistics(ledgerId, req.user.tenantId);
   }
 
