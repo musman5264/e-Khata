@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import Notification from '../models/Notification';
+import Notification, { NotificationStatus } from '../models/Notification';
 import { NotificationService } from '../services/notification.service';
 import logger from '../utils/logger';
 
@@ -16,7 +16,7 @@ export class NotificationController {
         .sort({ createdAt: -1 });
 
       const total = await Notification.countDocuments({ userId });
-      const unread = await Notification.countDocuments({ userId, status: 'pending' });
+      const unread = await Notification.countDocuments({ userId, status: NotificationStatus.PENDING });
 
       res.json({
         success: true,
@@ -61,8 +61,8 @@ export class NotificationController {
       const userId = req.user?._id;
 
       await Notification.updateMany(
-        { userId, status: 'pending' },
-        { status: 'read', readAt: new Date() }
+        { userId, status: NotificationStatus.PENDING },
+        { status: NotificationStatus.READ, readAt: new Date() }
       );
 
       res.json({ success: true, message: 'All notifications marked as read' });

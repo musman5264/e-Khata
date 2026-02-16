@@ -27,7 +27,7 @@ export const initializeFirebase = (): void => {
   }
 };
 
-export const verifyOTP = async (phoneNumber: string, _otp: string): Promise<boolean> => {
+export const verifyOTP = async (phoneNumber: string, otp: string): Promise<boolean> => {
   try {
     if (!firebaseApp) {
       logger.error('Firebase not initialized');
@@ -36,7 +36,7 @@ export const verifyOTP = async (phoneNumber: string, _otp: string): Promise<bool
 
     // In a real implementation, you would verify the OTP using Firebase Authentication
     // For now, this is a placeholder
-    logger.info(`Verifying OTP for phone: ${phoneNumber}`);
+    logger.info(`Verifying OTP for phone: ${phoneNumber}, OTP: ${otp}`);
     
     // TODO: Implement actual Firebase OTP verification
     // This would typically involve Firebase Authentication phone verification
