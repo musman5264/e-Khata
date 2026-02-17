@@ -40,6 +40,7 @@ export default function MoreScreen() {
     { title: t('report.title'), icon: 'chart-bar', iconBg: '#EBF5FB', iconColor: '#2E86C1', route: '/(app)/reports/trial-balance' },
     { title: t('team.title'), icon: 'account-multiple-outline', iconBg: '#E8F8F5', iconColor: '#00B894', route: '/(app)/team/members' },
     { title: t('payment.history'), icon: 'credit-card-outline', iconBg: '#FEF9E7', iconColor: '#D4AC0D', route: '/(app)/payment/history' },
+    { title: 'Payment Links', icon: 'link-variant', iconBg: '#E8EAF6', iconColor: '#3F51B5', route: '/(app)/payment/payment-links' },
   ];
 
   const settingsItems: MenuItem[] = [

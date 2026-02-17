@@ -56,6 +56,9 @@ class AuthController extends Controller
         $token = $user->createToken('auth-token');
         $session = $this->sessionService->createSession($user, $request, $token->accessToken->id);
 
+        // Enforce one session per device
+        $this->sessionService->enforceOneActiveDevice($user, $session->id);
+
         $this->activityLog->logAction('login', 'User registered and logged in');
 
         return response()->json([
@@ -104,6 +107,10 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth-token');
         $session = $this->sessionService->createSession($user, $request, $token->accessToken->id);
+
+        // Enforce one session per device — deactivate any other active sessions
+        // on other devices so user is only logged in on the current device
+        $this->sessionService->enforceOneActiveDevice($user, $session->id);
 
         $this->activityLog->logAction('login', 'User logged in');
 

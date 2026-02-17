@@ -94,9 +94,10 @@ export default function DashboardScreen() {
           <View style={webStyles.quickGrid}>
             {([
               { icon: 'account-plus-outline' as IconName, label: 'Add Party', route: '/(app)/party/create', bg: '#EEF0FF', color: colors.primary },
-              { icon: 'chart-bar' as IconName, label: 'Reports', route: '/(app)/reports/trial-balance', bg: '#F0FFF4', color: '#10B981' },
+              { icon: 'chart-bar' as IconName, label: 'Reports', route: '/(app)/reports', bg: '#F0FFF4', color: '#10B981' },
               { icon: 'account-multiple-outline' as IconName, label: 'Team', route: '/(app)/team/members', bg: '#FFF8E1', color: '#F59E0B' },
               { icon: 'credit-card-outline' as IconName, label: 'Payments', route: '/(app)/payment/history', bg: '#FFF0F0', color: colors.debit },
+              { icon: 'link-variant' as IconName, label: 'Payment Links', route: '/(app)/payment/payment-links', bg: '#E8EAF6', color: '#3F51B5' },
               { icon: 'book-open-variant' as IconName, label: 'Daybook', route: '/(app)/(tabs)/daybook', bg: '#F3E8FF', color: '#8B5CF6' },
               { icon: 'cog-outline' as IconName, label: 'Settings', route: '/(app)/settings/tenant', bg: '#E0F7FA', color: '#0891B2' },
             ]).map((a) => (

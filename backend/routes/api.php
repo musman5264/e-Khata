@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\TeamController;
 use App\Http\Controllers\Api\V1\PartyController;
 use App\Http\Controllers\Api\V1\TransactionController;
 use App\Http\Controllers\Api\V1\PaymentController;
+use App\Http\Controllers\Api\V1\PaymentLinkController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\ShareController;
 use App\Http\Controllers\Api\V1\SessionController;
@@ -40,6 +41,9 @@ Route::prefix('v1')->group(function () {
     Route::post('payments/jazzcash/callback', [PaymentController::class, 'jazzCashCallback']);
     Route::post('payments/easypaisa/callback', [PaymentController::class, 'easypaisaCallback']);
     Route::get('payments/jazzcash/return', [PaymentController::class, 'jazzCashReturn']);
+
+    // Public payment link view (no auth)
+    Route::get('pay/{token}', [PaymentLinkController::class, 'publicView']);
 
     // Team invitation accept (auth required but no tenant header needed)
     Route::post('team/invite/accept', [TeamController::class, 'acceptInvite'])
@@ -109,6 +113,9 @@ Route::prefix('v1')->group(function () {
                 Route::post('payments/collect', [PaymentController::class, 'collect']);
                 Route::post('payments/send', [PaymentController::class, 'send']);
 
+                // Payment links — generate shareable payment links per party
+                Route::post('payment-links', [PaymentLinkController::class, 'store']);
+
                 // Sharing & export
                 Route::get('statement/pdf', [ShareController::class, 'pdf']);
                 Route::post('statement/share', [ShareController::class, 'share']);
@@ -119,6 +126,12 @@ Route::prefix('v1')->group(function () {
             // Payments — history & detail
             Route::get('payments', [PaymentController::class, 'index']);
             Route::get('payments/{id}', [PaymentController::class, 'show']);
+
+            // Payment links — list, detail, cancel, share
+            Route::get('payment-links', [PaymentLinkController::class, 'index']);
+            Route::get('payment-links/{id}', [PaymentLinkController::class, 'show']);
+            Route::put('payment-links/{id}/cancel', [PaymentLinkController::class, 'cancel']);
+            Route::get('payment-links/{id}/share', [PaymentLinkController::class, 'share']);
 
             // Flat transaction routes (convenience — no party prefix needed)
             Route::get('transactions/{id}', [TransactionController::class, 'showFlat']);
@@ -131,6 +144,8 @@ Route::prefix('v1')->group(function () {
                 Route::get('daybook', [ReportController::class, 'daybook']);
                 Route::get('trial-balance', [ReportController::class, 'trialBalance']);
                 Route::get('party-ledger/{partyId}', [ReportController::class, 'partyLedger']);
+                Route::get('party-statement/{partyId}', [ReportController::class, 'partyStatement']);
+                Route::get('cash-flow', [ReportController::class, 'cashFlow']);
                 Route::get('payment-summary', [ReportController::class, 'paymentSummary']);
                 Route::get('receivable-aging', [ReportController::class, 'receivableAging']);
                 Route::get('payable-aging', [ReportController::class, 'payableAging']);
@@ -181,6 +196,7 @@ Route::prefix('v1')->group(function () {
 
             // Admin Session management (Super Admin only)
             Route::get('sessions', [SessionController::class, 'adminIndex']);
+            Route::post('sessions/cleanup', [SessionController::class, 'cleanupDuplicates']);
             Route::get('sessions/{id}', [SessionController::class, 'adminShow']);
             Route::get('sessions/{id}/activities', [SessionController::class, 'sessionActivities']);
             Route::delete('sessions/{id}', [SessionController::class, 'adminDestroy']);

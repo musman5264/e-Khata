@@ -277,4 +277,19 @@ class SessionController extends Controller
             'message' => 'Session revoked by admin.',
         ]);
     }
+
+    /**
+     * POST /api/v1/admin/sessions/cleanup
+     * Clean up duplicate sessions — keep only latest per user per device (Super Admin).
+     */
+    public function cleanupDuplicates(Request $request): JsonResponse
+    {
+        $cleaned = $this->sessionService->cleanupDuplicateSessions();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Cleaned up {$cleaned} duplicate session(s).",
+            'data' => ['cleaned_count' => $cleaned],
+        ]);
+    }
 }

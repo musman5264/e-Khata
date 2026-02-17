@@ -24,7 +24,8 @@ const MAIN_NAV: NavItem[] = [
   { label: 'Daybook', icon: 'book-open-page-variant-outline', activeIcon: 'book-open-page-variant', path: '/(app)/(tabs)/daybook', match: 'daybook' },
   { label: 'Reports', icon: 'chart-bar', activeIcon: 'chart-bar', path: '/(app)/reports', match: 'reports' },
   { label: 'Team', icon: 'account-multiple-outline', activeIcon: 'account-multiple', path: '/(app)/team/members', match: 'team' },
-  { label: 'Payments', icon: 'credit-card-outline', activeIcon: 'credit-card', path: '/(app)/payment/history', match: 'payment' },
+  { label: 'Payments', icon: 'credit-card-outline', activeIcon: 'credit-card', path: '/(app)/payment/history', match: 'payment/history' },
+  { label: 'Payment Links', icon: 'link-variant', activeIcon: 'link-variant', path: '/(app)/payment/payment-links', match: 'payment-links' },
 ];
 
 const SETTINGS_NAV: NavItem[] = [

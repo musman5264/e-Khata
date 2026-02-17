@@ -61,6 +61,15 @@ export default function AdminSessionsScreen() {
     },
   });
 
+  // Cleanup duplicate sessions
+  const cleanupMutation = useMutation({
+    mutationFn: () => api.post('/admin/sessions/cleanup'),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-sessions'] });
+      alert(res.data?.message || 'Duplicate sessions cleaned up.');
+    },
+  });
+
   const sessions = sessionsData?.data || sessionsData || [];
 
   const getDeviceIcon = (session: any): IconName => {
@@ -75,17 +84,29 @@ export default function AdminSessionsScreen() {
 
   return (
     <View style={styles.container}>
-      <LoadingOverlay visible={revokeMutation.isPending} message="Revoking session..." />
+      <LoadingOverlay visible={revokeMutation.isPending || cleanupMutation.isPending} message={cleanupMutation.isPending ? "Cleaning up..." : "Revoking session..."} />
 
       {/* Search + Filters */}
       <View style={styles.header}>
-        <Searchbar
-          placeholder="Search by name, device, IP, location..."
-          value={search}
-          onChangeText={setSearch}
-          style={styles.searchbar}
-          inputStyle={{ fontSize: 13 }}
-        />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Searchbar
+            placeholder="Search by name, device, IP, location..."
+            value={search}
+            onChangeText={setSearch}
+            style={[styles.searchbar, { flex: 1 }]}
+            inputStyle={{ fontSize: 13 }}
+          />
+          <Button
+            mode="outlined"
+            compact
+            icon="broom"
+            onPress={() => cleanupMutation.mutate()}
+            style={{ borderColor: '#FF9800', borderRadius: 8 }}
+            labelStyle={{ fontSize: 11, color: '#FF9800' }}
+          >
+            Cleanup
+          </Button>
+        </View>
         <View style={styles.filterRow}>
           {(['all', 'active', 'inactive'] as const).map((f) => (
             <Chip
