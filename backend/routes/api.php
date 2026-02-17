@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\SessionController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\LogController;
 use App\Http\Controllers\Api\V1\SystemSettingsController;
+use App\Http\Controllers\Api\V1\VersionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -31,6 +32,9 @@ Route::prefix('v1')->group(function () {
         Route::post('login', [AuthController::class, 'login']);
         Route::post('firebase/verify', [FirebaseAuthController::class, 'verify']);
     });
+
+    // Public version info
+    Route::get('version/current', [VersionController::class, 'current']);
 
     // Payment gateway callbacks (public — no auth)
     Route::post('payments/jazzcash/callback', [PaymentController::class, 'jazzCashCallback']);
@@ -167,6 +171,13 @@ Route::prefix('v1')->group(function () {
             Route::get('tenants/{id}', [SystemSettingsController::class, 'showTenant']);
             Route::put('tenants/{id}', [SystemSettingsController::class, 'updateTenant']);
             Route::delete('tenants/{id}', [SystemSettingsController::class, 'deleteTenant']);
+
+            // Version management
+            Route::get('versions', [VersionController::class, 'index']);
+            Route::post('versions', [VersionController::class, 'store']);
+            Route::get('versions/{id}', [VersionController::class, 'show']);
+            Route::put('versions/{id}', [VersionController::class, 'update']);
+            Route::delete('versions/{id}', [VersionController::class, 'destroy']);
 
             // Admin Session management (Super Admin only)
             Route::get('sessions', [SessionController::class, 'adminIndex']);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, TouchableOpacity, Platform } from 'react-native';
 import { TextInput, Button, Text, Switch, Surface, Divider, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -60,6 +60,7 @@ const TABS: Tab[] = [
   { key: 'sms', label: 'SMS Gateway', icon: 'message-text-outline', groups: ['sms'] },
   { key: 'email', label: 'Email', icon: 'email-outline', groups: ['email'] },
   { key: 'notifications', label: 'Notifications', icon: 'bell-outline', groups: ['notifications'] },
+  { key: 'integrations', label: 'Integrations', icon: 'puzzle-outline', groups: ['integrations_google', 'integrations_meta', 'integrations_apple', 'integrations_microsoft'] },
 ];
 
 export default function AdminSettingsScreen() {
@@ -120,6 +121,10 @@ export default function AdminSettingsScreen() {
     sms: '📱 ' + t('settings.smsGateway'),
     email: '✉️ ' + t('settings.emailSystem'),
     notifications: '🔔 ' + t('settings.notificationSystem'),
+    integrations_google: '🔷 Google Services',
+    integrations_meta: '📘 Meta / Facebook',
+    integrations_apple: '🍎 Apple',
+    integrations_microsoft: '🪟 Microsoft',
   };
 
   const currentTab = TABS.find((t) => t.key === activeTab)!;
@@ -144,7 +149,7 @@ export default function AdminSettingsScreen() {
     <View style={styles.outerContainer}>
       <LoadingOverlay visible={mutation.isPending} message="Saving settings..." />
       {/* Tab Bar */}
-      <View style={styles.tabBar}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabBar} contentContainerStyle={{ paddingHorizontal: 4 }}>
         {TABS.map((tab) => (
           <TouchableOpacity
             key={tab.key}
@@ -162,7 +167,7 @@ export default function AdminSettingsScreen() {
             </Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </ScrollView>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <Text variant="headlineSmall" style={styles.title}>{currentTab.label} {t('settings.configuration')}</Text>

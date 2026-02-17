@@ -118,6 +118,34 @@ class SystemSetting extends Model
             ['key' => 'push_provider', 'value' => 'firebase', 'type' => 'string', 'group' => 'notifications', 'label' => 'Push Provider', 'description' => 'Push notification provider (firebase, onesignal)', 'is_mandatory' => false],
             ['key' => 'firebase_server_key', 'value' => '', 'type' => 'string', 'group' => 'notifications', 'label' => 'Firebase Server Key', 'description' => 'Firebase Cloud Messaging server key', 'is_mandatory' => false],
             ['key' => 'in_app_notifications', 'value' => 'true', 'type' => 'boolean', 'group' => 'notifications', 'label' => 'In-App Notifications', 'description' => 'Enable in-app notification bell', 'is_mandatory' => false],
+
+            // ── Third-party Integrations: Google ──
+            ['key' => 'google_signin_enabled', 'value' => 'false', 'type' => 'boolean', 'group' => 'integrations_google', 'label' => 'Enable Google Sign-In', 'description' => 'Allow users to sign in with Google. Configure at https://console.cloud.google.com → APIs & Services → Credentials → OAuth 2.0 Client IDs', 'is_mandatory' => false],
+            ['key' => 'google_client_id', 'value' => '', 'type' => 'string', 'group' => 'integrations_google', 'label' => 'Google Client ID', 'description' => 'OAuth 2.0 Client ID from Google Cloud Console (e.g. 123456.apps.googleusercontent.com)', 'is_mandatory' => false],
+            ['key' => 'google_client_secret', 'value' => '', 'type' => 'string', 'group' => 'integrations_google', 'label' => 'Google Client Secret', 'description' => 'OAuth 2.0 Client Secret from Google Cloud Console', 'is_mandatory' => false],
+            ['key' => 'google_analytics_id', 'value' => '', 'type' => 'string', 'group' => 'integrations_google', 'label' => 'Google Analytics ID', 'description' => 'Google Analytics Measurement ID (e.g. G-XXXXXXXXXX). Configure at https://analytics.google.com', 'is_mandatory' => false],
+            ['key' => 'google_maps_api_key', 'value' => '', 'type' => 'string', 'group' => 'integrations_google', 'label' => 'Google Maps API Key', 'description' => 'API key for Google Maps. Configure at https://console.cloud.google.com → APIs & Services → Credentials', 'is_mandatory' => false],
+
+            // ── Third-party Integrations: Meta/Facebook ──
+            ['key' => 'meta_signin_enabled', 'value' => 'false', 'type' => 'boolean', 'group' => 'integrations_meta', 'label' => 'Enable Meta/Facebook Sign-In', 'description' => 'Allow users to sign in with Facebook/Meta. Configure at https://developers.facebook.com → My Apps → Create App → Facebook Login', 'is_mandatory' => false],
+            ['key' => 'meta_app_id', 'value' => '', 'type' => 'string', 'group' => 'integrations_meta', 'label' => 'Meta App ID', 'description' => 'App ID from Meta for Developers dashboard (https://developers.facebook.com/apps)', 'is_mandatory' => false],
+            ['key' => 'meta_app_secret', 'value' => '', 'type' => 'string', 'group' => 'integrations_meta', 'label' => 'Meta App Secret', 'description' => 'App Secret from Meta for Developers → Settings → Basic', 'is_mandatory' => false],
+            ['key' => 'meta_pixel_id', 'value' => '', 'type' => 'string', 'group' => 'integrations_meta', 'label' => 'Meta Pixel ID', 'description' => 'Facebook Pixel ID for tracking. Configure at https://business.facebook.com → Events Manager → Pixels', 'is_mandatory' => false],
+            ['key' => 'whatsapp_business_token', 'value' => '', 'type' => 'string', 'group' => 'integrations_meta', 'label' => 'WhatsApp Business API Token', 'description' => 'Permanent token from Meta Business → WhatsApp → API Setup. Required for sending WhatsApp messages.', 'is_mandatory' => false],
+            ['key' => 'whatsapp_phone_number_id', 'value' => '', 'type' => 'string', 'group' => 'integrations_meta', 'label' => 'WhatsApp Phone Number ID', 'description' => 'Phone Number ID from Meta Business → WhatsApp → Getting Started', 'is_mandatory' => false],
+
+            // ── Third-party Integrations: Apple ──
+            ['key' => 'apple_signin_enabled', 'value' => 'false', 'type' => 'boolean', 'group' => 'integrations_apple', 'label' => 'Enable Apple Sign-In', 'description' => 'Allow users to sign in with Apple. Configure at https://developer.apple.com → Certificates, IDs & Profiles → Service IDs', 'is_mandatory' => false],
+            ['key' => 'apple_client_id', 'value' => '', 'type' => 'string', 'group' => 'integrations_apple', 'label' => 'Apple Service ID', 'description' => 'Service ID from Apple Developer Portal → Identifiers → Service IDs', 'is_mandatory' => false],
+            ['key' => 'apple_team_id', 'value' => '', 'type' => 'string', 'group' => 'integrations_apple', 'label' => 'Apple Team ID', 'description' => 'Team ID from Apple Developer Portal → Membership → Team ID', 'is_mandatory' => false],
+            ['key' => 'apple_key_id', 'value' => '', 'type' => 'string', 'group' => 'integrations_apple', 'label' => 'Apple Key ID', 'description' => 'Key ID from Apple Developer Portal → Keys → Sign in with Apple', 'is_mandatory' => false],
+            ['key' => 'apple_private_key', 'value' => '', 'type' => 'string', 'group' => 'integrations_apple', 'label' => 'Apple Private Key', 'description' => 'Contents of the .p8 key file downloaded from Apple Developer Portal → Keys', 'is_mandatory' => false],
+
+            // ── Third-party Integrations: Microsoft ──
+            ['key' => 'microsoft_signin_enabled', 'value' => 'false', 'type' => 'boolean', 'group' => 'integrations_microsoft', 'label' => 'Enable Microsoft Sign-In', 'description' => 'Allow users to sign in with Microsoft/Windows. Configure at https://portal.azure.com → Azure Active Directory → App Registrations', 'is_mandatory' => false],
+            ['key' => 'microsoft_client_id', 'value' => '', 'type' => 'string', 'group' => 'integrations_microsoft', 'label' => 'Microsoft Client ID', 'description' => 'Application (client) ID from Azure Portal → App Registrations → Overview', 'is_mandatory' => false],
+            ['key' => 'microsoft_client_secret', 'value' => '', 'type' => 'string', 'group' => 'integrations_microsoft', 'label' => 'Microsoft Client Secret', 'description' => 'Client secret from Azure Portal → App Registrations → Certificates & Secrets → New Client Secret', 'is_mandatory' => false],
+            ['key' => 'microsoft_tenant_id', 'value' => 'common', 'type' => 'string', 'group' => 'integrations_microsoft', 'label' => 'Microsoft Tenant ID', 'description' => 'Directory (tenant) ID, or "common" for multi-tenant. Found in Azure Portal → App Registrations → Overview', 'is_mandatory' => false],
         ];
     }
 }

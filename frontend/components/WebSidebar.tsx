@@ -2,9 +2,11 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { colors } from '@/theme';
+import api from '@/services/api';
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -40,6 +42,7 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Users', icon: 'account-supervisor-outline', activeIcon: 'account-supervisor', path: '/(app)/admin/users', match: 'admin/users' },
   { label: 'Businesses', icon: 'store-outline', activeIcon: 'store', path: '/(app)/admin/tenants', match: 'admin/tenants' },
   { label: 'Sessions', icon: 'shield-lock-outline', activeIcon: 'shield-lock', path: '/(app)/admin/sessions', match: 'admin/sessions' },
+  { label: 'Versions', icon: 'tag-outline', activeIcon: 'tag', path: '/(app)/admin/versions', match: 'admin/versions' },
 ];
 
 function SidebarItem({ item, isActive, onPress }: { item: NavItem; isActive: boolean; onPress: () => void }) {
@@ -70,6 +73,15 @@ export default function WebSidebar() {
   const selectTenant = useAuthStore((s) => s.selectTenant);
   const logout = useAuthStore((s) => s.logout);
   const { isSuperAdmin, canManageTeam } = usePermissions();
+
+  const { data: versionData } = useQuery({
+    queryKey: ['current-version'],
+    queryFn: async () => {
+      const res = await api.get('/version/current');
+      return res.data.data;
+    },
+    staleTime: 1000 * 60 * 60, // cache for 1 hour
+  });
 
   const hasTenant = !!currentTenant;
   const tenants = user?.tenants ?? [];
@@ -169,6 +181,9 @@ export default function WebSidebar() {
 
       {/* User Profile */}
       <View style={styles.userSection}>
+        <View style={styles.versionRow}>
+          <Text style={styles.versionText}>e-Khata v{versionData?.version || '1.0.0'}</Text>
+        </View>
         <View style={styles.userDivider} />
         <View style={styles.userRow}>
           <View style={styles.userAvatar}>
@@ -268,6 +283,8 @@ const styles = StyleSheet.create({
   // User
   userSection: { paddingHorizontal: 12, paddingBottom: 16 },
   userDivider: { height: 1, backgroundColor: '#ECEEF5', marginBottom: 12 },
+  versionRow: { alignItems: 'center', paddingBottom: 8 },
+  versionText: { fontSize: 10, color: '#B0B5C8', fontWeight: '500' },
   userRow: {
     flexDirection: 'row',
     alignItems: 'center',
