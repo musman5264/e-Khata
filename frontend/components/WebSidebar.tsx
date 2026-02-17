@@ -93,7 +93,7 @@ export default function WebSidebar() {
     : 'U';
 
   return (
-    <View style={styles.sidebar}>
+    <View style={styles.sidebar} nativeID="web-sidebar">
       {/* Logo */}
       <View style={styles.logoSection}>
         <View style={styles.logoIcon}>

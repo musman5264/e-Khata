@@ -344,7 +344,7 @@ class ReportController extends Controller
     {
         $this->authorize('view_reports');
 
-        $query = \App\Models\Payment::query();
+        $query = \App\Models\Payment::query()->with('party:id,name');
 
         if ($request->has('date_from') && $request->has('date_to')) {
             $query->whereBetween('created_at', [$request->date_from, $request->date_to]);
@@ -353,8 +353,8 @@ class ReportController extends Controller
         $payments = $query->orderByDesc('created_at')->get();
 
         $summary = [
-            'total_collected' => $payments->where('type', 'collect')->where('status', 'completed')->sum('amount'),
-            'total_sent' => $payments->where('type', 'send')->where('status', 'completed')->sum('amount'),
+            'total_collected' => $payments->where('direction', 'inbound')->where('status', 'completed')->sum('amount'),
+            'total_sent' => $payments->where('direction', 'outbound')->where('status', 'completed')->sum('amount'),
             'total_pending' => $payments->where('status', 'pending')->sum('amount'),
             'total_failed' => $payments->where('status', 'failed')->sum('amount'),
             'count' => $payments->count(),
@@ -366,10 +366,12 @@ class ReportController extends Controller
                 'summary' => $summary,
                 'payments' => $payments->take(50)->map(fn($p) => [
                     'id' => $p->id,
-                    'type' => $p->type,
+                    'type' => $p->direction === 'inbound' ? 'collect' : 'send',
+                    'direction' => $p->direction,
                     'amount' => (float)$p->amount,
                     'status' => $p->status,
                     'gateway' => $p->gateway,
+                    'party_name' => $p->party?->name,
                     'created_at' => $p->created_at->format('Y-m-d H:i'),
                 ]),
             ],

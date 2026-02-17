@@ -44,11 +44,15 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Track rehydration state - prevent 401 from clearing token during rehydrate
+let isRehydrating = false;
+export function setRehydrating(v: boolean) { isRehydrating = v; }
+
 // Response interceptor — handle 401
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !isRehydrating) {
       await removeToken();
       // The auth store will handle navigation
     }

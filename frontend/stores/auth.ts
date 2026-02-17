@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import api, { setToken, removeToken, setTenantId, getStoredToken, getStoredTenantId } from '@/services/api';
+import api, { setToken, removeToken, setTenantId, getStoredToken, getStoredTenantId, setRehydrating } from '@/services/api';
+import { setDateFormat } from '@/utils/formatDate';
 
 interface User {
   id: number;
@@ -17,6 +18,7 @@ interface Tenant {
   name: string;
   slug: string;
   logo_url: string | null;
+  settings?: Record<string, any>;
 }
 
 interface AuthState {
@@ -121,8 +123,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: false });
       return;
     }
+    setRehydrating(true);
     set({ isLoading: true, token: storedToken });
     try {
+      // Ensure token is set for the request
+      await setToken(storedToken);
       const { data } = await api.get('/auth/me');
       const userData = data.data?.user || data.data;
       const tenants = userData.tenants || data.data?.tenants || [];
@@ -137,7 +142,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // If no stored tenant but only one available, auto-select it
       if (!currentTenant && tenants.length === 1) {
         currentTenant = tenants[0];
-        await setTenantId(String(currentTenant.id));
+        await setTenantId(String(currentTenant!.id));
       }
 
       set({
@@ -147,15 +152,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isAuthenticated: true,
         isLoading: false,
       });
+      // Apply tenant date format system-wide
+      if (currentTenant?.settings?.date_format) {
+        setDateFormat(currentTenant.settings.date_format);
+      }
     } catch {
       await removeToken();
       set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+    } finally {
+      setRehydrating(false);
     }
   },
 
   selectTenant: async (tenant) => {
     await setTenantId(tenant.id.toString());
     set({ currentTenant: tenant });
+    // Apply tenant date format system-wide
+    if (tenant.settings?.date_format) {
+      setDateFormat(tenant.settings.date_format);
+    }
   },
 
   setUser: (user) => set({ user }),

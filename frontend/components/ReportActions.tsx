@@ -3,12 +3,46 @@ import { View, StyleSheet, Platform } from 'react-native';
 import { Button, IconButton, Menu, Divider } from 'react-native-paper';
 import { colors } from '@/theme';
 
+// Inject global print CSS once on web
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  const printStyleId = 'ekhata-print-styles';
+  if (!document.getElementById(printStyleId)) {
+    const style = document.createElement('style');
+    style.id = printStyleId;
+    style.textContent = `
+      @media print {
+        /* Hide sidebar, action buttons, navigation, impersonation banner */
+        #web-sidebar,
+        #report-actions,
+        #impersonation-banner,
+        [data-testid="web-sidebar"],
+        #report-actions,
+        [data-print="no-print"] {
+          display: none !important;
+        }
+        /* Reset layout so content fills the page */
+        body, #root, #root > div {
+          background: #fff !important;
+        }
+        /* Make the main content full-width */
+        body * {
+          overflow: visible !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
 interface ReportActionsProps {
   onPrint?: () => void;
   onExportPDF?: () => void;
   onExportExcel?: () => void;
   onShare?: () => void;
   compact?: boolean;
+  /** The CSS selector or element ref for the content to export as PDF. 
+   *  If not provided, the closest scrollable parent will be used. */
+  contentSelector?: string;
 }
 
 export default function ReportActions({
@@ -17,21 +51,74 @@ export default function ReportActions({
   onExportExcel,
   onShare,
   compact = false,
+  contentSelector,
 }: ReportActionsProps) {
   const [menuVisible, setMenuVisible] = React.useState(false);
 
   const handlePrint = () => {
     if (onPrint) return onPrint();
     if (Platform.OS === 'web') {
+      // Tag sidebar and action buttons as no-print before printing
+      tagNoPrintElements(true);
       window.print();
+      // Remove tags after print dialog closes
+      setTimeout(() => tagNoPrintElements(false), 500);
     }
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (onExportPDF) return onExportPDF();
-    // Default: use browser print to PDF
     if (Platform.OS === 'web') {
-      window.print();
+      try {
+        // Dynamically import html2pdf.js
+        const html2pdf = (await import('html2pdf.js')).default;
+
+        // Find the report content element
+        let element: HTMLElement | null = null;
+        if (contentSelector) {
+          element = document.querySelector(contentSelector) as HTMLElement;
+        }
+        if (!element) {
+          // Try to find the scrollable report content area
+          // Look for the closest scrollview content container
+          const scrollViews = document.querySelectorAll('[data-testid*="report"], main, [role="main"]');
+          if (scrollViews.length > 0) {
+            element = scrollViews[0] as HTMLElement;
+          }
+        }
+        if (!element) {
+          // Fallback: grab the main content area (the right side of the layout)
+          const mainContent = document.querySelector('#root > div > div:last-child') as HTMLElement;
+          element = mainContent || document.body;
+        }
+
+        const title = document.title || 'Report';
+        const filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+        const opt = {
+          margin: [10, 10, 10, 10] as [number, number, number, number],
+          filename,
+          image: { type: 'jpeg' as const, quality: 0.98 },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            // Ignore sidebar and action buttons
+            ignoreElements: (el: Element) => {
+              const id = el.id || '';
+              return id === 'report-actions' || id === 'web-sidebar' || id === 'impersonation-banner' ||
+                     el.getAttribute('data-print') === 'no-print';
+            },
+          },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+        };
+
+        await html2pdf().set(opt).from(element).save();
+      } catch (err) {
+        console.error('PDF export error:', err);
+        // Fallback to print
+        handlePrint();
+      }
     }
   };
 
@@ -49,7 +136,7 @@ export default function ReportActions({
 
   if (compact) {
     return (
-      <View style={styles.compactRow}>
+      <View style={styles.compactRow} nativeID="report-actions">
         <Menu
           visible={menuVisible}
           onDismiss={() => setMenuVisible(false)}
@@ -90,7 +177,7 @@ export default function ReportActions({
   }
 
   return (
-    <View style={styles.row}>
+    <View style={styles.row} nativeID="report-actions">
       <Button
         mode="outlined"
         icon="printer"
@@ -135,6 +222,15 @@ export default function ReportActions({
       </Button>
     </View>
   );
+}
+
+/**
+ * Tag or untag elements that should be hidden during printing.
+ * The sidebar is identified by its nativeID="web-sidebar".
+ */
+function tagNoPrintElements(_tag: boolean) {
+  // Elements are already tagged with nativeID attributes
+  // The @media print CSS handles hiding them automatically
 }
 
 const styles = StyleSheet.create({

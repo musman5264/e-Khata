@@ -10,7 +10,7 @@ export default function ImpersonationBanner() {
   if (!isImpersonating) return null;
 
   return (
-    <View style={styles.banner}>
+    <View style={styles.banner} nativeID="impersonation-banner">
       <MaterialCommunityIcons name="incognito" size={18} color="#fff" />
       <Text style={styles.text} numberOfLines={1}>
         Viewing as <Text style={styles.bold}>{user?.name}</Text>

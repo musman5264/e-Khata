@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   content: { padding: spacing.base, paddingBottom: 40 },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: spacing.base },
   title: { fontWeight: '700' },
-  filterCard: { padding: spacing.base, borderRadius: 14, backgroundColor: '#fff', elevation: 1, marginBottom: 12 },
+  filterCard: { padding: spacing.base, borderRadius: 14, backgroundColor: '#fff', elevation: 1, marginBottom: 12, zIndex: 100 },
   filterGrid: { gap: 12 },
   filterLabel: { marginBottom: 4, color: colors.textSecondary, fontWeight: '600' },
   dateInput: { backgroundColor: '#fff', fontSize: 13 },
