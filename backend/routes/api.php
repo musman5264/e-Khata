@@ -89,7 +89,8 @@ Route::prefix('v1')->group(function () {
         // ──────────────────────────────────────────────────────
         Route::middleware(['tenant', 'log.api'])->group(function () {
 
-            // Tenants — update / delete
+            // Tenants — current / update / delete
+            Route::get('tenants/current', [TenantController::class, 'current']);
             Route::put('tenants/{id}', [TenantController::class, 'update']);
             Route::delete('tenants/{id}', [TenantController::class, 'destroy']);
 

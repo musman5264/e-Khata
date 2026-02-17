@@ -8,6 +8,7 @@ import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import SearchableDropdown from '@/components/SearchableDropdown';
 import ReportActions from '@/components/ReportActions';
+import { formatDate } from '@/utils/formatDate';
 
 export default function PartyLedgerScreen() {
   const router = useRouter();
@@ -224,7 +225,7 @@ export default function PartyLedgerScreen() {
                 >
                   <DataTable.Cell style={{ flex: 1.2 }}>
                     <Text style={[styles.cellText, (entry.is_opening || entry.is_closing) && styles.boldText]}>
-                      {entry.date}
+                      {formatDate(entry.date)}
                     </Text>
                   </DataTable.Cell>
                   <DataTable.Cell style={{ flex: 2.5 }}>
@@ -325,7 +326,7 @@ const styles = StyleSheet.create({
   content: { padding: spacing.base, paddingBottom: 40 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.base },
   title: { fontWeight: '700' },
-  filterCard: { padding: spacing.base, borderRadius: 14, backgroundColor: '#fff', elevation: 1, marginBottom: 12 },
+  filterCard: { padding: spacing.base, borderRadius: 14, backgroundColor: '#fff', elevation: 1, marginBottom: 12, zIndex: 100 },
   filterGrid: { gap: 12 },
   filterLabel: { marginBottom: 4, color: colors.textSecondary, fontWeight: '600' },
   dateInput: { backgroundColor: '#fff', fontSize: 13 },

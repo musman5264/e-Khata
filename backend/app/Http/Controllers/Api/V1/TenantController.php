@@ -70,6 +70,26 @@ class TenantController extends Controller
     }
 
     /**
+     * GET /api/v1/tenants/current — Return the currently active tenant (from middleware).
+     */
+    public function current(Request $request): JsonResponse
+    {
+        $tenant = app('currentTenant');
+
+        if (!$tenant) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active business selected.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $tenant,
+        ]);
+    }
+
+    /**
      * PUT /api/v1/tenants/{id}
      */
     public function update(Request $request, int $id): JsonResponse

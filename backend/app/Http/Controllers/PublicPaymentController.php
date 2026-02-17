@@ -56,23 +56,23 @@ class PublicPaymentController extends Controller
         $returnUrl = urlencode(config('app.url') . '/api/v1/payments/jazzcash/return');
 
         if ($link->gateway === 'jazzcash') {
-            // JazzCash Mobile Account payment URL
-            // This opens the JazzCash app if installed, or their web portal
             $merchantId = config('services.jazzcash.merchant_id', '');
-            $password = config('services.jazzcash.password', '');
 
             if ($merchantId) {
                 // Production JazzCash integration
                 return "https://payments.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform?"
-                    . "pp_Amount=" . ($amount * 100) // Amount in paisa
+                    . "pp_Amount=" . ($amount * 100)
                     . "&pp_TxnRefNo=" . $txnRef
                     . "&pp_Description=" . $description
                     . "&pp_MerchantID=" . $merchantId
                     . "&pp_ReturnURL=" . $returnUrl;
             }
 
-            // Fallback: JazzCash app deep link
-            return "https://www.jazzcash.com.pk/";
+            // Deep-link fallback: Android intent URI that opens JazzCash app or falls back to Play Store
+            return "intent://pay#Intent;scheme=jazzcash;"
+                . "package=com.techlogix.mobilinkcustomer;"
+                . "S.browser_fallback_url=" . urlencode("https://play.google.com/store/apps/details?id=com.techlogix.mobilinkcustomer") . ";"
+                . "end";
         }
 
         if ($link->gateway === 'easypaisa') {
@@ -86,8 +86,11 @@ class PublicPaymentController extends Controller
                     . "&orderRefNum=" . $txnRef;
             }
 
-            // Fallback: EasyPaisa app deep link
-            return "https://easypaisa.com.pk/";
+            // Deep-link fallback: Android intent URI that opens EasyPaisa app or falls back to Play Store
+            return "intent://pay#Intent;scheme=easypaisa;"
+                . "package=pk.com.telenor.phoenix;"
+                . "S.browser_fallback_url=" . urlencode("https://play.google.com/store/apps/details?id=pk.com.telenor.phoenix") . ";"
+                . "end";
         }
 
         return '#';

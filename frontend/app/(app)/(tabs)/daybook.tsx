@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatDate as fmtDate } from '@/utils/formatDate';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -67,7 +68,7 @@ export default function DaybookScreen() {
             </TouchableOpacity>
             <View style={wStyles.dateCenter}>
               <Text style={wStyles.dateLabel}>{formatDateDisplay(date)}</Text>
-              <Text style={wStyles.dateValue}>{date}</Text>
+              <Text style={wStyles.dateValue}>{fmtDate(date)}</Text>
             </View>
             <TouchableOpacity onPress={() => changeDate(1)} style={wStyles.dateArrow}>
               <MaterialCommunityIcons name="chevron-right" size={24} color={colors.primary} />
@@ -163,7 +164,7 @@ export default function DaybookScreen() {
         </TouchableOpacity>
         <View style={mStyles.dateCenter}>
           <Text style={mStyles.dateLabel}>{formatDateDisplay(date)}</Text>
-          <Text style={mStyles.dateValue}>{date}</Text>
+          <Text style={mStyles.dateValue}>{fmtDate(date)}</Text>
         </View>
         <TouchableOpacity onPress={() => changeDate(1)} style={mStyles.dateArrow}>
           <MaterialCommunityIcons name="chevron-right" size={28} color={colors.primary} />

@@ -8,6 +8,7 @@ import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import SearchableDropdown from '@/components/SearchableDropdown';
 import ReportActions from '@/components/ReportActions';
+import { formatDate } from '@/utils/formatDate';
 
 export default function PartyStatementScreen() {
   const params = useLocalSearchParams<{ partyId?: string }>();
@@ -154,7 +155,7 @@ export default function PartyStatementScreen() {
 
                 {entries.map((e: any, i: number) => (
                   <DataTable.Row key={i}>
-                    <DataTable.Cell style={{ flex: 1.2 }}><Text style={styles.cellText}>{e.date}</Text></DataTable.Cell>
+                    <DataTable.Cell style={{ flex: 1.2 }}><Text style={styles.cellText}>{formatDate(e.date)}</Text></DataTable.Cell>
                     <DataTable.Cell style={{ flex: 2.5 }}><Text style={styles.cellText}>{e.description}</Text></DataTable.Cell>
                     <DataTable.Cell style={{ flex: 0.8 }}><Text style={styles.cellText}>{e.reference || ''}</Text></DataTable.Cell>
                     <DataTable.Cell numeric style={{ flex: 1.2 }}>

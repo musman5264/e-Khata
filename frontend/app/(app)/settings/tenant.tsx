@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Alert, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
-import { TextInput, Button, Text, Switch, Surface, Divider } from 'react-native-paper';
+import { TextInput, Button, Text, Switch, Surface, Divider, Menu } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import LoadingOverlay from '@/components/LoadingOverlay';
+import { setDateFormat } from '@/utils/formatDate';
+import { useAuthStore } from '@/stores/auth';
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -19,6 +21,14 @@ const TABS: Tab[] = [
   { key: 'payments', label: 'Payments', icon: 'credit-card-outline', color: '#F59E0B' },
 ];
 
+const DATE_FORMATS = [
+  { label: 'DD MMM YYYY  (01 Jan 2025)', value: 'DD MMM YYYY' },
+  { label: 'DD/MM/YYYY  (01/01/2025)', value: 'DD/MM/YYYY' },
+  { label: 'MM/DD/YYYY  (01/01/2025)', value: 'MM/DD/YYYY' },
+  { label: 'YYYY-MM-DD  (2025-01-01)', value: 'YYYY-MM-DD' },
+  { label: 'DD-MM-YYYY  (01-01-2025)', value: 'DD-MM-YYYY' },
+];
+
 export default function TenantSettingsScreen() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -26,7 +36,7 @@ export default function TenantSettingsScreen() {
   const isWide = Platform.OS === 'web' && width > 900;
 
   const [activeTab, setActiveTab] = useState('general');
-  const [form, setForm] = useState({ name: '', business_type: '', address: '', phone: '', city: '', email: '' });
+  const [form, setForm] = useState({ name: '', address: '', phone: '', city: '', email: '' });
   const [settings, setSettings] = useState<Record<string, any>>({});
 
   const { data: tenant } = useQuery({
@@ -40,7 +50,7 @@ export default function TenantSettingsScreen() {
   useEffect(() => {
     if (tenant) {
       setForm({
-        name: tenant.name || '', business_type: tenant.business_type || '',
+        name: tenant.name || '',
         address: tenant.address || '', phone: tenant.phone || '',
         city: tenant.city || '', email: tenant.email || '',
       });
@@ -55,6 +65,13 @@ export default function TenantSettingsScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['current-tenant'] });
+      // Update global date format
+      if (settings.date_format) {
+        setDateFormat(settings.date_format);
+      }
+      // Update auth store tenant data
+      const rehydrate = useAuthStore.getState().rehydrate;
+      rehydrate();
       Alert.alert(t('common.success'), 'Business settings saved successfully.');
     },
     onError: (err: any) => {
@@ -98,7 +115,6 @@ export default function TenantSettingsScreen() {
             <Text style={styles.groupTitle}>Business Information</Text>
             <Divider style={{ marginBottom: 16 }} />
             <TextInput label="Business Name" value={form.name} onChangeText={(v) => setForm((p) => ({ ...p, name: v }))} mode="outlined" style={styles.input} left={<TextInput.Icon icon="domain" />} />
-            <TextInput label="Business Type" value={form.business_type} onChangeText={(v) => setForm((p) => ({ ...p, business_type: v }))} mode="outlined" style={styles.input} left={<TextInput.Icon icon="briefcase-outline" />} placeholder="e.g. Retail, Wholesale" />
             <TextInput label="Email" value={form.email} onChangeText={(v) => setForm((p) => ({ ...p, email: v }))} mode="outlined" style={styles.input} left={<TextInput.Icon icon="email-outline" />} keyboardType="email-address" />
             <TextInput label="Phone" value={form.phone} onChangeText={(v) => setForm((p) => ({ ...p, phone: v }))} mode="outlined" style={styles.input} left={<TextInput.Icon icon="phone" />} keyboardType="phone-pad" />
             <TextInput label="City" value={form.city} onChangeText={(v) => setForm((p) => ({ ...p, city: v }))} mode="outlined" style={styles.input} left={<TextInput.Icon icon="map-marker" />} />
@@ -120,6 +136,7 @@ export default function TenantSettingsScreen() {
             <Surface style={styles.card}>
               <Text style={styles.groupTitle}>Regional Settings</Text>
               <Divider style={{ marginBottom: 16 }} />
+              <DateFormatPicker value={settings.date_format || 'DD MMM YYYY'} onChange={(v) => updateSetting('date_format', v)} />
               <TextInput label="Currency" value={settings.currency || 'PKR'} onChangeText={(v) => updateSetting('currency', v)} mode="outlined" style={styles.input} />
               <TextInput label="Currency Symbol" value={settings.currency_symbol || 'Rs.'} onChangeText={(v) => updateSetting('currency_symbol', v)} mode="outlined" style={styles.input} />
               <TextInput label="Balance Alert Threshold" value={String(settings.balance_alert_threshold || 50000)} onChangeText={(v) => updateSetting('balance_alert_threshold', parseInt(v) || 0)} mode="outlined" style={styles.input} keyboardType="numeric" />
@@ -168,6 +185,38 @@ export default function TenantSettingsScreen() {
         </View>
         <View style={{ height: 40 }} />
       </ScrollView>
+    </View>
+  );
+}
+
+function DateFormatPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [menuVisible, setMenuVisible] = React.useState(false);
+  const selectedLabel = DATE_FORMATS.find(f => f.value === value)?.label || value;
+  return (
+    <View style={{ marginBottom: 12 }}>
+      <Text style={styles.fieldLabel}>Date Format</Text>
+      <Menu
+        visible={menuVisible}
+        onDismiss={() => setMenuVisible(false)}
+        anchor={
+          <TouchableOpacity
+            style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 4, padding: 14, marginTop: 4 }}
+            onPress={() => setMenuVisible(true)}
+          >
+            <Text style={{ fontSize: 14, color: '#333' }}>{selectedLabel}</Text>
+          </TouchableOpacity>
+        }
+        contentStyle={{ backgroundColor: '#fff' }}
+      >
+        {DATE_FORMATS.map((f) => (
+          <Menu.Item
+            key={f.value}
+            onPress={() => { onChange(f.value); setMenuVisible(false); }}
+            title={f.label}
+            style={value === f.value ? { backgroundColor: '#EEF2FF' } : undefined}
+          />
+        ))}
+      </Menu>
     </View>
   );
 }

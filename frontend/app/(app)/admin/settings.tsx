@@ -283,6 +283,19 @@ export default function AdminSettingsScreen() {
 
                 <Divider style={{ marginBottom: 16 }} />
 
+                {/* Google Service Account JSON Import for Firebase / Google Cloud tabs */}
+                {(group === 'firebase' || group === 'google_cloud') && Platform.OS === 'web' && (
+                  <ImportServiceAccountJSON
+                    group={group}
+                    onImport={(values) => {
+                      Object.entries(values).forEach(([key, value]) => {
+                        updateField(key, value);
+                      });
+                      Alert.alert('Imported!', 'Service account values have been auto-filled. Click Save to persist.');
+                    }}
+                  />
+                )}
+
                 {/* Fields */}
                 {settings.map((setting) => (
                   <SettingField
@@ -316,6 +329,93 @@ export default function AdminSettingsScreen() {
     </View>
   );
 }
+
+/* ─── Import Service Account JSON Component ─── */
+function ImportServiceAccountJSON({
+  group,
+  onImport,
+}: {
+  group: string;
+  onImport: (values: Record<string, string>) => void;
+}) {
+  const handleImport = () => {
+    if (typeof document === 'undefined') return;
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const json = JSON.parse(event.target?.result as string);
+          const values: Record<string, string> = {};
+
+          if (group === 'firebase') {
+            // Map Firebase service account JSON fields to system settings keys
+            if (json.project_id) values['firebase_project_id'] = json.project_id;
+            if (json.client_email) values['firebase_client_email'] = json.client_email;
+            if (json.private_key) values['firebase_private_key'] = json.private_key;
+            if (json.private_key_id) values['firebase_private_key_id'] = json.private_key_id;
+            if (json.client_id) values['firebase_client_id'] = json.client_id;
+            if (json.token_uri) values['firebase_token_uri'] = json.token_uri;
+            // For web API key — user still needs to add from Firebase Console > Project Settings
+          } else if (group === 'google_cloud') {
+            if (json.project_id) values['google_cloud_project_id'] = json.project_id;
+            if (json.client_email) values['google_cloud_service_account_email'] = json.client_email;
+            if (json.private_key) values['google_cloud_service_account_key'] = json.private_key;
+          }
+
+          if (Object.keys(values).length > 0) {
+            onImport(values);
+          } else {
+            Alert.alert('Invalid File', 'The selected JSON file does not contain recognized service account fields.');
+          }
+        } catch {
+          Alert.alert('Error', 'Failed to parse JSON file. Please select a valid service account JSON.');
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
+  return (
+    <Surface style={importStyles.container}>
+      <View style={importStyles.row}>
+        <View style={importStyles.iconBox}>
+          <MaterialCommunityIcons name="cloud-upload-outline" size={24} color="#4285F4" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={importStyles.title}>Import Service Account JSON</Text>
+          <Text style={importStyles.desc}>
+            Upload the JSON key file from {group === 'firebase' ? 'Firebase Console > Project Settings > Service Accounts' : 'Google Cloud Console > IAM > Service Accounts'} to auto-fill all fields below.
+          </Text>
+        </View>
+        <Button mode="contained" onPress={handleImport} icon="file-upload" buttonColor="#4285F4" style={{ borderRadius: 8 }} compact>
+          Import
+        </Button>
+      </View>
+    </Surface>
+  );
+}
+
+const importStyles = StyleSheet.create({
+  container: {
+    padding: 16, borderRadius: 12, marginBottom: 16,
+    backgroundColor: '#EEF4FF', elevation: 0, borderWidth: 1, borderColor: '#D6E4FF',
+  },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  iconBox: {
+    width: 44, height: 44, borderRadius: 12, backgroundColor: '#fff',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  title: { fontSize: 13, fontWeight: '700', color: '#1B2B65' },
+  desc: { fontSize: 11, color: '#5B6B8A', marginTop: 2, lineHeight: 15 },
+});
 
 /* ─── Setting Field Component ─── */
 function SettingField({

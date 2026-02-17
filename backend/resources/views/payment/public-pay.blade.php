@@ -122,11 +122,11 @@
                 </div>
 
                 @if($link->gateway === 'jazzcash')
-                    <a href="{{ $gatewayUrl }}" class="pay-btn jazzcash" id="payBtn">
+                    <a href="{{ $gatewayUrl }}" class="pay-btn jazzcash" id="payBtn" onclick="return handlePayClick(event, '{{ $gatewayUrl }}', 'jazzcash')">
                         Pay with JazzCash
                     </a>
                 @else
-                    <a href="{{ $gatewayUrl }}" class="pay-btn easypaisa" id="payBtn">
+                    <a href="{{ $gatewayUrl }}" class="pay-btn easypaisa" id="payBtn" onclick="return handlePayClick(event, '{{ $gatewayUrl }}', 'easypaisa')">
                         Pay with EasyPaisa
                     </a>
                 @endif
@@ -137,6 +137,43 @@
                     </div>
                 @endif
             </div>
+
+            <script>
+            function handlePayClick(event, url, gateway) {
+                // For intent:// URIs (Android deep links), handle gracefully
+                if (url.startsWith('intent://')) {
+                    // On Android Chrome, intent:// URIs work natively
+                    // On iOS/desktop, try universal links or fallback to app store
+                    var isAndroid = /android/i.test(navigator.userAgent);
+                    var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+                    if (isAndroid) {
+                        // Let the browser handle the intent:// URI
+                        return true;
+                    }
+
+                    event.preventDefault();
+
+                    if (isIOS) {
+                        // Try iOS App Store for the payment app
+                        if (gateway === 'jazzcash') {
+                            window.location.href = 'https://apps.apple.com/pk/app/jazzcash/id1008498498';
+                        } else {
+                            window.location.href = 'https://apps.apple.com/pk/app/easypaisa/id1517591392';
+                        }
+                    } else {
+                        // Desktop fallback — open web portal
+                        if (gateway === 'jazzcash') {
+                            window.location.href = 'https://www.jazzcash.com.pk/';
+                        } else {
+                            window.location.href = 'https://easypaisa.com.pk/';
+                        }
+                    }
+                    return false;
+                }
+                return true;
+            }
+            </script>
         @endif
 
         <div class="footer">
