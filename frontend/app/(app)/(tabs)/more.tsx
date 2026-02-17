@@ -1,12 +1,11 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Platform } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
 import { Surface } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth';
 import { colors, spacing } from '@/theme';
-import WebContainer from '@/components/WebContainer';
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -25,7 +24,7 @@ function MenuRow({ item, onPress }: { item: MenuItem; onPress: () => void }) {
         <MaterialCommunityIcons name={item.icon} size={20} color={item.iconColor} />
       </View>
       <Text style={styles.menuLabel}>{item.title}</Text>
-      <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textHint} />
+      <MaterialCommunityIcons name="chevron-right" size={20} color="#B0B5C8" />
     </TouchableOpacity>
   );
 }
@@ -61,13 +60,12 @@ export default function MoreScreen() {
   const initials = user?.name ? user.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) : 'U';
 
   return (
-    <WebContainer>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Profile card */}
-        <Surface style={styles.profileCard}>
-          <View style={styles.profileAvatar}>
-            <Text style={styles.profileInitials}>{initials}</Text>
-          </View>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Profile card */}
+      <Surface style={styles.profileCard}>
+        <View style={styles.profileAvatar}>
+          <Text style={styles.profileInitials}>{initials}</Text>
+        </View>
           <View style={{ flex: 1, marginLeft: 14 }}>
             <Text style={styles.profileName}>{user?.name || 'User'}</Text>
             <Text style={styles.profileMobile}>{user?.mobile || ''}</Text>
@@ -133,7 +131,6 @@ export default function MoreScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </WebContainer>
   );
 }
 
