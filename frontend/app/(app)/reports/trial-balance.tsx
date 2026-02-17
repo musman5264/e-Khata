@@ -24,9 +24,10 @@ export default function TrialBalanceScreen() {
       {/* Header with actions */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.base }}>
         <Text variant="headlineSmall" style={{ fontWeight: '700' }}>Trial Balance</Text>
-        {data?.parties?.length > 0 && <ReportActions />}
+        {data?.parties?.length > 0 && <ReportActions reportTitle="Trial_Balance" />}
       </View>
 
+      <View nativeID="printable-report">
       {/* Summary Cards */}
       <View style={styles.summaryRow}>
         <Surface style={[styles.summaryCard, { backgroundColor: '#FFEBEE' }]}>
@@ -87,6 +88,7 @@ export default function TrialBalanceScreen() {
           </DataTable.Row>
         </DataTable>
       </Card>
+      </View>
     </ScrollView>
   );
 }

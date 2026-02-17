@@ -55,11 +55,30 @@ class SystemSettingsController extends Controller
             SystemSetting::setValue($item['key'], $item['value']);
         }
 
-        // Auto-track version for settings change
-        $changedKeys = collect($request->settings)->pluck('key')->implode(', ');
+        // Auto-track version for settings change with categorized changelog
+        $changedSettings = collect($request->settings);
+        $groups = $changedSettings->groupBy(function ($item) {
+            $key = $item['key'];
+            if (str_starts_with($key, 'whatsapp_')) return 'WhatsApp Configuration';
+            if (str_starts_with($key, 'payment_')) return 'Payment Settings';
+            if (str_starts_with($key, 'sms_')) return 'SMS Settings';
+            if (str_starts_with($key, 'email_')) return 'Email Settings';
+            if (str_starts_with($key, 'app_')) return 'Application Settings';
+            return 'General Settings';
+        });
+
+        $changelog = "**Updated:**\n";
+        foreach ($groups as $group => $items) {
+            $changelog .= "\n### {$group}\n";
+            foreach ($items as $item) {
+                $label = str_replace('_', ' ', ucwords(str_replace('_', ' ', $item['key'])));
+                $changelog .= "- {$label}\n";
+            }
+        }
+
         AutoVersionService::trackMinor(
             'System settings updated',
-            "Updated settings: {$changedKeys}"
+            $changelog
         );
 
         return response()->json([

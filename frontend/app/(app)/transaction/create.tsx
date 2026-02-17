@@ -8,6 +8,7 @@ import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import SearchableDropdown from '@/components/SearchableDropdown';
 import LoadingOverlay from '@/components/LoadingOverlay';
+import DateInput from '@/components/DateInput';
 
 export default function CreateTransactionScreen() {
   const { t } = useTranslation();
@@ -128,13 +129,11 @@ export default function CreateTransactionScreen() {
       )}
 
       {/* Date */}
-      <TextInput
+      <DateInput
         label={t('transaction.date')}
         value={form.date}
         onChangeText={(v) => updateField('date', v)}
-        mode="outlined"
         style={styles.input}
-        placeholder="YYYY-MM-DD"
       />
 
       {/* Description */}

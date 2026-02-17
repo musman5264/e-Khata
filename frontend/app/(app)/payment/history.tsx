@@ -12,6 +12,7 @@ import { colors, spacing } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate, formatDateTime } from '@/utils/formatDate';
 import ReportActions from '@/components/ReportActions';
+import DateInput from '@/components/DateInput';
 
 export default function PaymentHistoryScreen() {
   const { t } = useTranslation();
@@ -50,7 +51,7 @@ export default function PaymentHistoryScreen() {
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter((p: any) =>
-        (p.party_name || '').toLowerCase().includes(q) ||
+        (p.party?.name || p.party_name || '').toLowerCase().includes(q) ||
         (p.gateway || '').toLowerCase().includes(q) ||
         (p.description || '').toLowerCase().includes(q)
       );
@@ -113,25 +114,17 @@ export default function PaymentHistoryScreen() {
             />
           </View>
           <View style={{ flex: 1, minWidth: 130 }}>
-            <Text variant="labelMedium" style={styles.filterLabel}>From Date</Text>
-            <TextInput
-              mode="outlined"
+            <DateInput
+              label="From Date"
               value={dateFrom}
               onChangeText={setDateFrom}
-              placeholder="YYYY-MM-DD"
-              dense
-              style={styles.dateInput}
             />
           </View>
           <View style={{ flex: 1, minWidth: 130 }}>
-            <Text variant="labelMedium" style={styles.filterLabel}>To Date</Text>
-            <TextInput
-              mode="outlined"
+            <DateInput
+              label="To Date"
               value={dateTo}
               onChangeText={setDateTo}
-              placeholder="YYYY-MM-DD"
-              dense
-              style={styles.dateInput}
             />
           </View>
         </View>
@@ -184,23 +177,23 @@ export default function PaymentHistoryScreen() {
             <ScrollView horizontal={!isWide} showsHorizontalScrollIndicator={false}>
               <DataTable style={{ minWidth: isWide ? undefined : 700 }}>
                 <DataTable.Header style={styles.tableHeader}>
-                  <DataTable.Title style={{ flex: 1.5 }}><Text style={styles.thText}>Party</Text></DataTable.Title>
+                  <DataTable.Title style={{ flex: 1.8 }}><Text style={styles.thText}>Party</Text></DataTable.Title>
                   <DataTable.Title style={{ flex: 1 }}><Text style={styles.thText}>Gateway</Text></DataTable.Title>
-                  <DataTable.Title numeric style={{ flex: 1.2 }}><Text style={styles.thText}>Amount</Text></DataTable.Title>
-                  <DataTable.Title style={{ flex: 0.8 }}><Text style={styles.thText}>Direction</Text></DataTable.Title>
+                  <DataTable.Title numeric style={{ flex: 1.3 }}><Text style={styles.thText}>Amount</Text></DataTable.Title>
+                  <DataTable.Title style={{ flex: 0.7 }}><Text style={styles.thText}>Direction</Text></DataTable.Title>
                   <DataTable.Title style={{ flex: 0.8 }}><Text style={styles.thText}>Status</Text></DataTable.Title>
                   <DataTable.Title style={{ flex: 1.2 }}><Text style={styles.thText}>Date</Text></DataTable.Title>
                 </DataTable.Header>
 
                 {filteredPayments.map((p: any) => (
                   <DataTable.Row key={p.id} onPress={() => openDetail(p)} style={{ cursor: 'pointer' } as any}>
-                    <DataTable.Cell style={{ flex: 1.5 }}>
-                      <Text style={[styles.cellText, { fontWeight: '600' }]}>{p.party_name || `#${p.party_id}`}</Text>
+                    <DataTable.Cell style={{ flex: 1.8 }}>
+                      <Text style={[styles.cellText, { fontWeight: '600' }]}>{p.party?.name || p.party_name || `Party #${p.party_id}`}</Text>
                     </DataTable.Cell>
                     <DataTable.Cell style={{ flex: 1 }}>
                       <Text style={[styles.cellText, { textTransform: 'capitalize' }]}>{p.gateway}</Text>
                     </DataTable.Cell>
-                    <DataTable.Cell numeric style={{ flex: 1.2 }}>
+                    <DataTable.Cell numeric style={{ flex: 1.3 }}>
                       <Text style={[styles.cellText, {
                         fontWeight: '700',
                         color: p.direction === 'inbound' ? colors.credit : colors.debit,
@@ -208,15 +201,17 @@ export default function PaymentHistoryScreen() {
                         {formatCurrency(p.amount)}
                       </Text>
                     </DataTable.Cell>
-                    <DataTable.Cell style={{ flex: 0.8 }}>
-                      <Chip compact mode="flat" style={{
+                    <DataTable.Cell style={{ flex: 0.7 }}>
+                      <View style={[styles.dirBadge, {
                         backgroundColor: p.direction === 'inbound' ? '#E8F5E9' : '#FFF0F0',
-                      }} textStyle={{
-                        fontSize: 10, fontWeight: '600',
-                        color: p.direction === 'inbound' ? colors.credit : colors.debit,
-                      }}>
-                        {p.direction === 'inbound' ? 'IN' : 'OUT'}
-                      </Chip>
+                      }]}>
+                        <Text style={{
+                          fontSize: 10, fontWeight: '700',
+                          color: p.direction === 'inbound' ? colors.credit : colors.debit,
+                        }}>
+                          {p.direction === 'inbound' ? 'IN' : 'OUT'}
+                        </Text>
+                      </View>
                     </DataTable.Cell>
                     <DataTable.Cell style={{ flex: 0.8 }}>
                       <View style={[styles.statusBadge, { backgroundColor: statusColor(p.status) + '20' }]}>
@@ -271,7 +266,7 @@ export default function PaymentHistoryScreen() {
                   </Text>
                 </View>
 
-                <DetailRow label="Party" value={selectedPayment.party_name || `#${selectedPayment.party_id}`} />
+                <DetailRow label="Party" value={selectedPayment.party?.name || selectedPayment.party_name || `Party #${selectedPayment.party_id}`} />
                 <DetailRow label="Direction" value={
                   <Chip compact mode="flat" style={{
                     backgroundColor: selectedPayment.direction === 'inbound' ? '#E8F5E9' : '#FFF0F0',
@@ -349,6 +344,7 @@ const styles = StyleSheet.create({
   thText: { fontWeight: '700', fontSize: 12, color: '#333' },
   cellText: { fontSize: 12 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
+  dirBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8 },
   centered: { padding: 40, alignItems: 'center' },
   emptyCard: { padding: 40, borderRadius: 14, alignItems: 'center', backgroundColor: '#fff', elevation: 1 },
   modalContainer: {

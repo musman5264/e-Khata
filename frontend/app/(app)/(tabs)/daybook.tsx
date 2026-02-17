@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, Text as RNText, Platform, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, FlatList, ScrollView, TouchableOpacity, Text as RNText, Platform, useWindowDimensions } from 'react-native';
 import { Text, Surface, TextInput, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
-import { formatCurrency } from '@/utils/formatCurrency';
+import { formatCurrency, formatCurrencyUrdu } from '@/utils/formatCurrency';
 import { formatDate as fmtDate } from '@/utils/formatDate';
 import ReportActions from '@/components/ReportActions';
+import DateInput from '@/components/DateInput';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -64,7 +65,7 @@ export default function DaybookScreen() {
   // ═══════════════════════════════════
   if (isWeb) {
     return (
-      <View style={wStyles.container}>
+      <ScrollView style={wStyles.container} contentContainerStyle={{ padding: 32, paddingBottom: 60 }}>
         {/* Top bar */}
         <View style={wStyles.topBar}>
           <View>
@@ -106,25 +107,17 @@ export default function DaybookScreen() {
             {rangeMode && (
               <>
                 <View style={{ minWidth: 150 }}>
-                  <Text style={{ fontSize: 11, color: '#8A8FA8', marginBottom: 4, fontWeight: '600' }}>From</Text>
-                  <TextInput
-                    mode="outlined"
+                  <DateInput
+                    label="From"
                     value={dateFrom}
                     onChangeText={setDateFrom}
-                    placeholder="YYYY-MM-DD"
-                    dense
-                    style={{ backgroundColor: '#fff', fontSize: 13 }}
                   />
                 </View>
                 <View style={{ minWidth: 150 }}>
-                  <Text style={{ fontSize: 11, color: '#8A8FA8', marginBottom: 4, fontWeight: '600' }}>To</Text>
-                  <TextInput
-                    mode="outlined"
+                  <DateInput
+                    label="To"
                     value={dateTo}
                     onChangeText={setDateTo}
-                    placeholder="YYYY-MM-DD"
-                    dense
-                    style={{ backgroundColor: '#fff', fontSize: 13 }}
                   />
                 </View>
                 <Button
@@ -144,38 +137,46 @@ export default function DaybookScreen() {
 
         {/* Printable report area */}
         <View nativeID="printable-report">
-        {/* Stats row */}
+        {/* Stats row — 2-column layout to prevent number truncation */}
         <View style={wStyles.statsRow}>
-          <Surface style={wStyles.statCard}>
-            <View style={[wStyles.statIcon, { backgroundColor: '#FFF0F0' }]}>
-              <MaterialCommunityIcons name="arrow-bottom-left" size={18} color={colors.debit} />
+          {/* Card 1: Debit + Credit stacked */}
+          <Surface style={wStyles.statCardDouble}>
+            <View style={wStyles.statDoubleRow}>
+              <View style={[wStyles.statIcon, { backgroundColor: '#FFF0F0' }]}>
+                <MaterialCommunityIcons name="arrow-bottom-left" size={18} color={colors.debit} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={wStyles.statLabel}>NAAM (Debit)</Text>
+                <Text style={[wStyles.statValue, { color: colors.debit }]}>{formatCurrency(totalDebit)}</Text>
+                <Text style={wStyles.urduAmt}>{formatCurrencyUrdu(totalDebit)}</Text>
+              </View>
             </View>
-            <View>
-              <Text style={wStyles.statLabel}>NAAM (Debit)</Text>
-              <Text style={[wStyles.statValue, { color: colors.debit }]}>{formatCurrency(totalDebit)}</Text>
+            <View style={wStyles.statDivider} />
+            <View style={wStyles.statDoubleRow}>
+              <View style={[wStyles.statIcon, { backgroundColor: '#F0FFF4' }]}>
+                <MaterialCommunityIcons name="arrow-top-right" size={18} color={colors.credit} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={wStyles.statLabel}>JAMA (Credit)</Text>
+                <Text style={[wStyles.statValue, { color: colors.credit }]}>{formatCurrency(totalCredit)}</Text>
+                <Text style={wStyles.urduAmt}>{formatCurrencyUrdu(totalCredit)}</Text>
+              </View>
             </View>
           </Surface>
 
-          <Surface style={wStyles.statCard}>
-            <View style={[wStyles.statIcon, { backgroundColor: '#F0FFF4' }]}>
-              <MaterialCommunityIcons name="arrow-top-right" size={18} color={colors.credit} />
+          {/* Card 2: Net Balance */}
+          <Surface style={wStyles.statCardNet}>
+            <View style={[wStyles.statIcon, { backgroundColor: '#EEF0FF', width: 44, height: 44, borderRadius: 12 }]}>
+              <MaterialCommunityIcons name="scale-balance" size={22} color={colors.primary} />
             </View>
-            <View>
-              <Text style={wStyles.statLabel}>JAMA (Credit)</Text>
-              <Text style={[wStyles.statValue, { color: colors.credit }]}>{formatCurrency(totalCredit)}</Text>
-            </View>
-          </Surface>
-
-          <Surface style={wStyles.statCard}>
-            <View style={[wStyles.statIcon, { backgroundColor: '#EEF0FF' }]}>
-              <MaterialCommunityIcons name="scale-balance" size={18} color={colors.primary} />
-            </View>
-            <View>
-              <Text style={wStyles.statLabel}>Net Balance</Text>
-              <Text style={[wStyles.statValue, { color: net >= 0 ? colors.debit : colors.credit }]}>
-                {formatCurrency(Math.abs(net))} {net >= 0 ? 'Dr' : 'Cr'}
-              </Text>
-            </View>
+            <Text style={wStyles.statLabel}>Net Balance</Text>
+            <Text style={[wStyles.statValueLarge, { color: net >= 0 ? colors.debit : colors.credit }]}>
+              {formatCurrency(Math.abs(net))}
+            </Text>
+            <Text style={wStyles.urduAmt}>{formatCurrencyUrdu(Math.abs(net))}</Text>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: net >= 0 ? colors.debit : colors.credit }}>
+              {net >= 0 ? 'Dr (نام)' : 'Cr (جمع)'}
+            </Text>
           </Surface>
         </View>
 
@@ -220,7 +221,7 @@ export default function DaybookScreen() {
           />
         </Surface>
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
@@ -264,21 +265,17 @@ export default function DaybookScreen() {
 
         {rangeMode && (
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-            <TextInput
-              mode="outlined"
+            <DateInput
+              label="From"
               value={dateFrom}
               onChangeText={setDateFrom}
-              placeholder="From (YYYY-MM-DD)"
-              dense
-              style={{ flex: 1, backgroundColor: '#fff', fontSize: 12 }}
+              style={{ flex: 1 }}
             />
-            <TextInput
-              mode="outlined"
+            <DateInput
+              label="To"
               value={dateTo}
               onChangeText={setDateTo}
-              placeholder="To (YYYY-MM-DD)"
-              dense
-              style={{ flex: 1, backgroundColor: '#fff', fontSize: 12 }}
+              style={{ flex: 1 }}
             />
             <Button
               mode="contained"
@@ -295,32 +292,47 @@ export default function DaybookScreen() {
 
       {/* Printable area */}
       <View nativeID="printable-report">
-      {/* Summary Cards */}
+      {/* Summary Cards — 2-column layout */}
       <View style={mStyles.summaryRow}>
-        <View style={[mStyles.summaryCard, { backgroundColor: '#FFF0F0' }]}>
-          <View style={[mStyles.summaryIcon, { backgroundColor: colors.debit }]}>
-            <MaterialCommunityIcons name="arrow-bottom-left" size={16} color="#fff" />
+        {/* Card 1: Debit + Credit */}
+        <View style={[mStyles.summaryCardDouble, { backgroundColor: '#fff' }]}>
+          <View style={mStyles.summaryDoubleRow}>
+            <View style={[mStyles.summaryIcon, { backgroundColor: colors.debit }]}>
+              <MaterialCommunityIcons name="arrow-bottom-left" size={14} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={mStyles.summaryLabel}>NAAM (نام)</Text>
+              <Text style={[mStyles.summaryAmt, { color: colors.debit }]}>{formatCurrency(totalDebit)}</Text>
+              <Text style={mStyles.urduAmt}>{formatCurrencyUrdu(totalDebit)}</Text>
+            </View>
           </View>
-          <Text style={mStyles.summaryLabel}>NAAM</Text>
-          <Text style={[mStyles.summaryAmt, { color: colors.debit }]}>{formatCurrency(totalDebit)}</Text>
+          <View style={{ height: 1, backgroundColor: '#F3F4F6', marginVertical: 8 }} />
+          <View style={mStyles.summaryDoubleRow}>
+            <View style={[mStyles.summaryIcon, { backgroundColor: colors.credit }]}>
+              <MaterialCommunityIcons name="arrow-top-right" size={14} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={mStyles.summaryLabel}>JAMA (جمع)</Text>
+              <Text style={[mStyles.summaryAmt, { color: colors.credit }]}>{formatCurrency(totalCredit)}</Text>
+              <Text style={mStyles.urduAmt}>{formatCurrencyUrdu(totalCredit)}</Text>
+            </View>
+          </View>
         </View>
-        <View style={[mStyles.summaryCard, { backgroundColor: '#F0FFF4' }]}>
-          <View style={[mStyles.summaryIcon, { backgroundColor: colors.credit }]}>
-            <MaterialCommunityIcons name="arrow-top-right" size={16} color="#fff" />
+        {/* Card 2: Net Balance */}
+        <View style={[mStyles.summaryCardNet, { backgroundColor: '#fff' }]}>
+          <View style={[mStyles.summaryIcon, { backgroundColor: colors.primary }]}>
+            <MaterialCommunityIcons name="scale-balance" size={14} color="#fff" />
           </View>
-          <Text style={mStyles.summaryLabel}>JAMA</Text>
-          <Text style={[mStyles.summaryAmt, { color: colors.credit }]}>{formatCurrency(totalCredit)}</Text>
+          <Text style={mStyles.summaryLabel}>Net Balance</Text>
+          <Text style={[mStyles.summaryAmtLarge, { color: net >= 0 ? colors.debit : colors.credit }]}>
+            {formatCurrency(Math.abs(net))}
+          </Text>
+          <Text style={mStyles.urduAmt}>{formatCurrencyUrdu(Math.abs(net))}</Text>
+          <Text style={{ fontSize: 11, fontWeight: '600', color: net >= 0 ? colors.debit : colors.credit, marginTop: 2 }}>
+            {net >= 0 ? 'Dr (نام)' : 'Cr (جمع)'}
+          </Text>
         </View>
       </View>
-
-      {(totalDebit > 0 || totalCredit > 0) && (
-        <Surface style={mStyles.netBar}>
-          <Text style={mStyles.netLabel}>Net Balance</Text>
-          <Text style={[mStyles.netAmt, { color: net >= 0 ? colors.debit : colors.credit }]}>
-            {formatCurrency(Math.abs(net))} {net >= 0 ? 'Dr' : 'Cr'}
-          </Text>
-        </Surface>
-      )}
 
       <View style={mStyles.txnHeader}>
         <Text style={mStyles.txnHeaderTitle}>Entries</Text>
@@ -370,7 +382,7 @@ export default function DaybookScreen() {
 
 /* ═══ WEB STYLES ═══ */
 const wStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F6FA', padding: 32 },
+  container: { flex: 1, backgroundColor: '#F5F6FA' },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   title: { fontSize: 24, fontWeight: '700', color: colors.text },
   subtitle: { fontSize: 13, color: '#8A8FA8', marginTop: 2 },
@@ -399,16 +411,24 @@ const wStyles = StyleSheet.create({
     backgroundColor: colors.primary, borderColor: colors.primary,
   },
 
-  statCard: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12,
-    padding: 16, borderRadius: 12, elevation: 0, backgroundColor: '#fff',
+  /* 2-card layout for stats */
+  statCardDouble: {
+    flex: 1, padding: 16, borderRadius: 14, elevation: 0, backgroundColor: '#fff',
     borderWidth: 1, borderColor: '#ECEEF5',
+  },
+  statDoubleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  statDivider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 10 },
+  statCardNet: {
+    flex: 1, padding: 20, borderRadius: 14, elevation: 0, backgroundColor: '#fff',
+    borderWidth: 1, borderColor: '#ECEEF5', alignItems: 'center', justifyContent: 'center',
   },
   statIcon: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   statLabel: { fontSize: 11, color: '#8A8FA8', fontWeight: '500' },
-  statValue: { fontSize: 18, fontWeight: '800', marginTop: 2 },
+  statValue: { fontSize: 17, fontWeight: '800', marginTop: 2 },
+  statValueLarge: { fontSize: 22, fontWeight: '800', marginTop: 6 },
+  urduAmt: { fontSize: 10, color: '#8A8FA8', marginTop: 1 },
 
-  table: { flex: 1, borderRadius: 14, overflow: 'hidden', elevation: 0, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ECEEF5' },
+  table: { borderRadius: 14, overflow: 'hidden', elevation: 0, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ECEEF5' },
   tableHeader: { flexDirection: 'row', paddingHorizontal: 20, paddingVertical: 12, backgroundColor: '#F8F9FC', borderBottomWidth: 1, borderBottomColor: '#ECEEF5', alignItems: 'center' },
   th: { fontSize: 11, fontWeight: '700', color: '#8A8FA8', letterSpacing: 0.5, textTransform: 'uppercase' },
   tableRow: { flexDirection: 'row', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F3F4F6', alignItems: 'center' },
@@ -439,15 +459,20 @@ const mStyles = StyleSheet.create({
     backgroundColor: colors.primary, borderColor: colors.primary,
   },
 
-  summaryRow: { flexDirection: 'row', gap: 12, paddingHorizontal: spacing.base, marginTop: 8 },
-  summaryCard: { flex: 1, borderRadius: 16, padding: 16, alignItems: 'center' },
-  summaryIcon: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  summaryLabel: { fontSize: 10, fontWeight: '700', color: '#B0B5C8', letterSpacing: 0.5, marginTop: 8 },
-  summaryAmt: { fontSize: 18, fontWeight: '800', marginTop: 4 },
-
-  netBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: spacing.base, marginTop: 10, paddingHorizontal: 18, paddingVertical: 12, borderRadius: 12, elevation: 1, backgroundColor: colors.surface },
-  netLabel: { fontSize: 13, fontWeight: '600', color: '#8A8FA8' },
-  netAmt: { fontSize: 16, fontWeight: '700' },
+  summaryRow: { flexDirection: 'row', gap: 10, paddingHorizontal: spacing.base, marginTop: 8 },
+  summaryCardDouble: {
+    flex: 1, borderRadius: 14, padding: 14, elevation: 1, backgroundColor: colors.surface,
+  },
+  summaryDoubleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  summaryCardNet: {
+    flex: 1, borderRadius: 14, padding: 14, elevation: 1, backgroundColor: colors.surface,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  summaryIcon: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  summaryLabel: { fontSize: 10, fontWeight: '700', color: '#B0B5C8', letterSpacing: 0.5, marginTop: 4 },
+  summaryAmt: { fontSize: 15, fontWeight: '800', marginTop: 2 },
+  summaryAmtLarge: { fontSize: 18, fontWeight: '800', marginTop: 4 },
+  urduAmt: { fontSize: 9, color: '#8A8FA8', marginTop: 1 },
 
   txnHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.base + 4, paddingTop: 16, paddingBottom: 8 },
   txnHeaderTitle: { fontSize: 15, fontWeight: '700', color: colors.text },

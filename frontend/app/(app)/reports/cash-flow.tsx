@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import ReportActions from '@/components/ReportActions';
+import DateInput from '@/components/DateInput';
 
 type PeriodType = 'daily' | 'weekly' | 'monthly';
 
@@ -65,25 +66,17 @@ export default function CashFlowScreen() {
             </View>
           </View>
           <View style={{ flex: 1, minWidth: 130 }}>
-            <Text variant="labelMedium" style={styles.filterLabel}>From Date</Text>
-            <TextInput
-              mode="outlined"
+            <DateInput
+              label="From Date"
               value={dateFrom}
               onChangeText={setDateFrom}
-              placeholder="YYYY-MM-DD"
-              dense
-              style={styles.dateInput}
             />
           </View>
           <View style={{ flex: 1, minWidth: 130 }}>
-            <Text variant="labelMedium" style={styles.filterLabel}>To Date</Text>
-            <TextInput
-              mode="outlined"
+            <DateInput
+              label="To Date"
               value={dateTo}
               onChangeText={setDateTo}
-              placeholder="YYYY-MM-DD"
-              dense
-              style={styles.dateInput}
             />
           </View>
           <View style={{ justifyContent: 'flex-end' }}>

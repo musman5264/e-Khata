@@ -27,3 +27,17 @@ export function balanceDisplay(balance: number): { text: string; type: 'Dr' | 'C
     type: balance > 0 ? 'Dr' : 'Cr',
   };
 }
+
+/* ── Urdu helpers ── */
+const URDU_DIGITS = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+
+/** Convert English digits to Urdu: "1,234.00" → "۱,۲۳۴.۰۰" */
+export function toUrduDigits(str: string): string {
+  return str.replace(/[0-9]/g, (d) => URDU_DIGITS[parseInt(d)]);
+}
+
+/** Format amount with Urdu digits: 1234 → "روپے ۱,۲۳۴" */
+export function formatCurrencyUrdu(amount: number | null | undefined): string {
+  const formatted = formatAmount(amount);
+  return `روپے ${toUrduDigits(formatted)}`;
+}

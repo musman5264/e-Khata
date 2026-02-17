@@ -15,38 +15,53 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
     style.id = printStyleId;
     style.textContent = `
       @media print {
-        /* Hide everything by default */
-        body * {
-          visibility: hidden !important;
+        /* Hide everything first */
+        body > * {
+          display: none !important;
         }
 
-        /* Show only the printable report area and its children */
-        [id="printable-report"],
-        [id="printable-report"] * {
-          visibility: visible !important;
+        /* Show the root */
+        #root {
+          display: block !important;
         }
 
-        /* Position the printable area at top-left */
+        /* Walk down to find printable-report: show its ancestor chain */
+        #root * {
+          visibility: hidden;
+          height: 0;
+          overflow: hidden;
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+
+        /* Show the printable-report and all its children */
         [id="printable-report"] {
-          position: absolute !important;
+          display: block !important;
+          visibility: visible !important;
+          height: auto !important;
+          overflow: visible !important;
+          position: fixed !important;
           left: 0 !important;
           top: 0 !important;
           width: 100% !important;
           max-width: 100% !important;
-          padding: 0 !important;
+          padding: 10mm !important;
           margin: 0 !important;
+          z-index: 99999 !important;
+          background: #fff !important;
+        }
+
+        [id="printable-report"] * {
+          visibility: visible !important;
+          height: auto !important;
+          overflow: visible !important;
         }
 
         /* Reset backgrounds for clean print */
-        body, html, #root {
+        body, html {
           background: #fff !important;
           margin: 0 !important;
           padding: 0 !important;
-        }
-
-        /* Make everything visible (no scroll clipping) */
-        [id="printable-report"] * {
-          overflow: visible !important;
         }
 
         /* Explicit hide for known non-print elements */
@@ -61,11 +76,12 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
         [role="tablist"] {
           display: none !important;
           visibility: hidden !important;
+          height: 0 !important;
         }
 
         /* Print-friendly adjustments */
         @page {
-          margin: 15mm;
+          margin: 10mm;
           size: A4 portrait;
         }
       }
@@ -570,32 +586,43 @@ export default function ReportActions({
 /**
  * Find the report content element in the DOM for PDF export.
  * Priority: #printable-report → contentSelector → main content area → body
+ * IMPORTANT: Always returns a FRESH clone to prevent stale element caching.
  */
 function findReportElement(contentSelector?: string): HTMLElement | null {
   if (typeof document === 'undefined') return null;
 
+  let source: HTMLElement | null = null;
+
   // 1. Always prefer the standardized printable-report element
   const printable = document.getElementById('printable-report');
-  if (printable) return printable;
+  if (printable) {
+    source = printable;
+  }
 
   // 2. Try the explicit selector if provided
-  if (contentSelector) {
-    const el = document.querySelector(contentSelector) as HTMLElement;
-    if (el) return el;
+  if (!source && contentSelector) {
+    source = document.querySelector(contentSelector) as HTMLElement;
   }
 
   // 3. Find the main content area (right side of the flex-row layout)
-  const rootDiv = document.getElementById('root');
-  if (rootDiv) {
-    const flexRow = rootDiv.firstElementChild as HTMLElement;
-    if (flexRow && flexRow.children.length >= 2) {
-      const contentArea = flexRow.children[1] as HTMLElement;
-      if (contentArea) return contentArea;
+  if (!source) {
+    const rootDiv = document.getElementById('root');
+    if (rootDiv) {
+      const flexRow = rootDiv.firstElementChild as HTMLElement;
+      if (flexRow && flexRow.children.length >= 2) {
+        source = flexRow.children[1] as HTMLElement;
+      } else if (flexRow) {
+        source = flexRow;
+      }
     }
-    if (flexRow) return flexRow;
   }
 
-  return document.body;
+  if (!source) source = document.body;
+
+  // Clone to prevent stale references between navigations
+  const clone = source.cloneNode(true) as HTMLElement;
+  clone.style.width = source.offsetWidth + 'px';
+  return clone;
 }
 
 const styles = StyleSheet.create({
