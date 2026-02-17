@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { usePermissions } from '@/hooks/usePermissions';
 
 function getInitials(name: string) {
   return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
@@ -28,6 +29,7 @@ export default function PartyDetailScreen() {
   const [menuVisible, setMenuVisible] = React.useState(false);
   const { width } = useWindowDimensions();
   const isWeb = Platform.OS === 'web' && width > 768;
+  const { canManageParties, canCreateTransactions } = usePermissions();
 
   const { data: party } = useQuery({
     queryKey: ['party', id],
@@ -37,13 +39,14 @@ export default function PartyDetailScreen() {
     },
   });
 
-  const { data: transactions } = useQuery({
+  const { data: txnResponse } = useQuery({
     queryKey: ['party-transactions', id],
     queryFn: async () => {
-      const res = await api.get(`/transactions`, { params: { party_id: id, per_page: 100 } });
+      const res = await api.get(`/parties/${id}/transactions`);
       return res.data.data;
     },
   });
+  const transactions = txnResponse?.transactions ?? txnResponse ?? [];
 
   const deleteMutation = useMutation({
     mutationFn: () => api.delete(`/parties/${id}`),
@@ -115,13 +118,15 @@ export default function PartyDetailScreen() {
           </TouchableOpacity>
           <Text style={wStyles.headerTitle}>{party?.name || 'Party Details'}</Text>
           <View style={{ flex: 1 }} />
-          <TouchableOpacity
-            style={wStyles.editBtn}
-            onPress={() => router.push(`/(app)/party/edit/${id}`)}
-          >
-            <MaterialCommunityIcons name="pencil-outline" size={16} color={colors.primary} />
-            <Text style={wStyles.editText}>Edit</Text>
-          </TouchableOpacity>
+          {canManageParties && (
+            <TouchableOpacity
+              style={wStyles.editBtn}
+              onPress={() => router.push(`/(app)/party/edit/${id}`)}
+            >
+              <MaterialCommunityIcons name="pencil-outline" size={16} color={colors.primary} />
+              <Text style={wStyles.editText}>Edit</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             style={wStyles.shareBtn}
             onPress={() => router.push({ pathname: '/(app)/share/statement', params: { party_id: id } })}
@@ -129,9 +134,11 @@ export default function PartyDetailScreen() {
             <MaterialCommunityIcons name="share-variant-outline" size={16} color="#6C7293" />
             <Text style={wStyles.shareText}>Share</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={wStyles.deleteBtn} onPress={handleDelete}>
-            <MaterialCommunityIcons name="delete-outline" size={16} color={colors.error} />
-          </TouchableOpacity>
+          {canManageParties && (
+            <TouchableOpacity style={wStyles.deleteBtn} onPress={handleDelete}>
+              <MaterialCommunityIcons name="delete-outline" size={16} color={colors.error} />
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={wStyles.mainLayout}>
@@ -167,22 +174,24 @@ export default function PartyDetailScreen() {
             </Surface>
 
             {/* Action buttons */}
-            <View style={wStyles.actionRow}>
-              <TouchableOpacity
-                style={[wStyles.actionBtn, { backgroundColor: '#FFF0F0' }]}
-                onPress={() => router.push({ pathname: '/(app)/transaction/create', params: { party_id: id, type: 'debit' } })}
-              >
-                <MaterialCommunityIcons name="arrow-bottom-left" size={20} color={colors.debit} />
-                <Text style={[wStyles.actionText, { color: colors.debit }]}>NAAM (Debit)</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[wStyles.actionBtn, { backgroundColor: '#F0FFF4' }]}
-                onPress={() => router.push({ pathname: '/(app)/transaction/create', params: { party_id: id, type: 'credit' } })}
-              >
-                <MaterialCommunityIcons name="arrow-top-right" size={20} color={colors.credit} />
-                <Text style={[wStyles.actionText, { color: colors.credit }]}>JAMA (Credit)</Text>
-              </TouchableOpacity>
-            </View>
+            {canCreateTransactions && (
+              <View style={wStyles.actionRow}>
+                <TouchableOpacity
+                  style={[wStyles.actionBtn, { backgroundColor: '#FFF0F0' }]}
+                  onPress={() => router.push({ pathname: '/(app)/transaction/create', params: { party_id: id, type: 'debit' } })}
+                >
+                  <MaterialCommunityIcons name="arrow-bottom-left" size={20} color={colors.debit} />
+                  <Text style={[wStyles.actionText, { color: colors.debit }]}>NAAM (Debit)</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[wStyles.actionBtn, { backgroundColor: '#F0FFF4' }]}
+                  onPress={() => router.push({ pathname: '/(app)/transaction/create', params: { party_id: id, type: 'credit' } })}
+                >
+                  <MaterialCommunityIcons name="arrow-top-right" size={20} color={colors.credit} />
+                  <Text style={[wStyles.actionText, { color: colors.credit }]}>JAMA (Credit)</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
 
           {/* Right: Transactions */}
@@ -226,10 +235,10 @@ export default function PartyDetailScreen() {
             </TouchableOpacity>
           }
         >
-          <Menu.Item onPress={() => { setMenuVisible(false); router.push(`/(app)/party/edit/${id}`); }} title={t('common.edit')} leadingIcon="pencil" />
+          {canManageParties && <Menu.Item onPress={() => { setMenuVisible(false); router.push(`/(app)/party/edit/${id}`); }} title={t('common.edit')} leadingIcon="pencil" />}
           <Menu.Item onPress={() => { setMenuVisible(false); router.push({ pathname: '/(app)/share/statement', params: { party_id: id } }); }} title={t('share.share')} leadingIcon="share" />
-          <Divider />
-          <Menu.Item onPress={() => { setMenuVisible(false); handleDelete(); }} title={t('common.delete')} leadingIcon="delete" titleStyle={{ color: colors.error }} />
+          {canManageParties && <><Divider />
+          <Menu.Item onPress={() => { setMenuVisible(false); handleDelete(); }} title={t('common.delete')} leadingIcon="delete" titleStyle={{ color: colors.error }} /></>}
         </Menu>
       </View>
 
@@ -269,30 +278,32 @@ export default function PartyDetailScreen() {
       </Surface>
 
       {/* Action buttons */}
-      <View style={mStyles.actionsRow}>
-        <TouchableOpacity
-          style={[mStyles.actionBtn, { backgroundColor: '#FFF0F0' }]}
-          activeOpacity={0.7}
-          onPress={() => router.push({ pathname: '/(app)/transaction/create', params: { party_id: id, type: 'debit' } })}
-        >
-          <View style={[mStyles.actionIconWrap, { backgroundColor: colors.debit }]}>
-            <MaterialCommunityIcons name="arrow-bottom-left" size={20} color="#fff" />
-          </View>
-          <Text style={[mStyles.actionLabel, { color: colors.debit }]}>{t('transaction.debit')}</Text>
-          <Text style={mStyles.actionHint}>NAAM</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[mStyles.actionBtn, { backgroundColor: '#F0FFF4' }]}
-          activeOpacity={0.7}
-          onPress={() => router.push({ pathname: '/(app)/transaction/create', params: { party_id: id, type: 'credit' } })}
-        >
-          <View style={[mStyles.actionIconWrap, { backgroundColor: colors.credit }]}>
-            <MaterialCommunityIcons name="arrow-top-right" size={20} color="#fff" />
-          </View>
-          <Text style={[mStyles.actionLabel, { color: colors.credit }]}>{t('transaction.credit')}</Text>
-          <Text style={mStyles.actionHint}>JAMA</Text>
-        </TouchableOpacity>
-      </View>
+      {canCreateTransactions && (
+        <View style={mStyles.actionsRow}>
+          <TouchableOpacity
+            style={[mStyles.actionBtn, { backgroundColor: '#FFF0F0' }]}
+            activeOpacity={0.7}
+            onPress={() => router.push({ pathname: '/(app)/transaction/create', params: { party_id: id, type: 'debit' } })}
+          >
+            <View style={[mStyles.actionIconWrap, { backgroundColor: colors.debit }]}>
+              <MaterialCommunityIcons name="arrow-bottom-left" size={20} color="#fff" />
+            </View>
+            <Text style={[mStyles.actionLabel, { color: colors.debit }]}>{t('transaction.debit')}</Text>
+            <Text style={mStyles.actionHint}>NAAM</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[mStyles.actionBtn, { backgroundColor: '#F0FFF4' }]}
+            activeOpacity={0.7}
+            onPress={() => router.push({ pathname: '/(app)/transaction/create', params: { party_id: id, type: 'credit' } })}
+          >
+            <View style={[mStyles.actionIconWrap, { backgroundColor: colors.credit }]}>
+              <MaterialCommunityIcons name="arrow-top-right" size={20} color="#fff" />
+            </View>
+            <Text style={[mStyles.actionLabel, { color: colors.credit }]}>{t('transaction.credit')}</Text>
+            <Text style={mStyles.actionHint}>JAMA</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Transactions */}
       <View style={mStyles.txnHeader}>

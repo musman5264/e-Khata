@@ -25,7 +25,11 @@ export default function LoginScreen() {
       await login({ mobile, password });
       router.replace('/(app)/(tabs)/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      if (err.code === 'ERR_NETWORK' || !err.response) {
+        setError('Cannot connect to server. Please make sure the backend is running.');
+      } else {
+        setError(err.response?.data?.message || 'Login failed. Please try again.');
+      }
     }
   };
 

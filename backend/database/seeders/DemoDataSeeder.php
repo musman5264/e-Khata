@@ -63,13 +63,16 @@ class DemoDataSeeder extends Seeder
             ]
         );
 
-        // Attach user to tenant
+        // Attach demo user to tenant
         $tenant->users()->syncWithoutDetaching([$user->id => ['joined_at' => now()]]);
 
-        // Assign Owner role
+        // Assign Owner role to demo user
         if (!$user->hasRole('Owner')) {
             $user->assignRole('Owner');
         }
+
+        // Attach Super Admin to demo tenant too (so Super Admin can use tenant features)
+        $tenant->users()->syncWithoutDetaching([$superAdmin->id => ['joined_at' => now()]]);
 
         // Bind tenant for BelongsToTenant scope
         app()->instance('currentTenant', $tenant);

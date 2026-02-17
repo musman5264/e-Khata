@@ -95,7 +95,29 @@ class SystemSetting extends Model
 
             // System
             ['key' => 'maintenance_mode', 'value' => 'false', 'type' => 'boolean', 'group' => 'system', 'label' => 'Maintenance Mode', 'description' => 'Put the application in maintenance mode', 'is_mandatory' => false],
-            ['key' => 'sms_gateway', 'value' => 'none', 'type' => 'string', 'group' => 'system', 'label' => 'SMS Gateway', 'description' => 'Active SMS gateway provider (none, twilio, local)', 'is_mandatory' => true],
+
+            // SMS Gateway
+            ['key' => 'sms_enabled', 'value' => 'false', 'type' => 'boolean', 'group' => 'sms', 'label' => 'Enable SMS', 'description' => 'Enable or disable SMS notifications globally', 'is_mandatory' => false],
+            ['key' => 'sms_provider', 'value' => 'none', 'type' => 'string', 'group' => 'sms', 'label' => 'SMS Provider', 'description' => 'SMS gateway provider (none, twilio, local)', 'is_mandatory' => false],
+            ['key' => 'sms_api_key', 'value' => '', 'type' => 'string', 'group' => 'sms', 'label' => 'SMS API Key', 'description' => 'API key for SMS provider', 'is_mandatory' => false],
+            ['key' => 'sms_sender_id', 'value' => '', 'type' => 'string', 'group' => 'sms', 'label' => 'SMS Sender ID', 'description' => 'Sender ID / FROM number for SMS', 'is_mandatory' => false],
+            ['key' => 'sms_api_secret', 'value' => '', 'type' => 'string', 'group' => 'sms', 'label' => 'SMS API Secret', 'description' => 'API secret or auth token for SMS provider', 'is_mandatory' => false],
+
+            // Email
+            ['key' => 'email_enabled', 'value' => 'false', 'type' => 'boolean', 'group' => 'email', 'label' => 'Enable Email', 'description' => 'Enable or disable email notifications globally', 'is_mandatory' => false],
+            ['key' => 'email_provider', 'value' => 'smtp', 'type' => 'string', 'group' => 'email', 'label' => 'Email Provider', 'description' => 'Email provider (smtp, mailgun, ses)', 'is_mandatory' => false],
+            ['key' => 'smtp_host', 'value' => '', 'type' => 'string', 'group' => 'email', 'label' => 'SMTP Host', 'description' => 'SMTP server hostname', 'is_mandatory' => false],
+            ['key' => 'smtp_port', 'value' => '587', 'type' => 'integer', 'group' => 'email', 'label' => 'SMTP Port', 'description' => 'SMTP server port (587 for TLS, 465 for SSL)', 'is_mandatory' => false],
+            ['key' => 'smtp_user', 'value' => '', 'type' => 'string', 'group' => 'email', 'label' => 'SMTP Username', 'description' => 'SMTP authentication username', 'is_mandatory' => false],
+            ['key' => 'smtp_password', 'value' => '', 'type' => 'string', 'group' => 'email', 'label' => 'SMTP Password', 'description' => 'SMTP authentication password', 'is_mandatory' => false],
+            ['key' => 'from_email', 'value' => 'noreply@ekhata.pk', 'type' => 'string', 'group' => 'email', 'label' => 'From Email', 'description' => 'Default sender email address', 'is_mandatory' => false],
+            ['key' => 'from_name', 'value' => 'e-Khata', 'type' => 'string', 'group' => 'email', 'label' => 'From Name', 'description' => 'Default sender name', 'is_mandatory' => false],
+
+            // Notifications / Push
+            ['key' => 'notifications_enabled', 'value' => 'false', 'type' => 'boolean', 'group' => 'notifications', 'label' => 'Enable Push Notifications', 'description' => 'Enable or disable push notifications globally', 'is_mandatory' => false],
+            ['key' => 'push_provider', 'value' => 'firebase', 'type' => 'string', 'group' => 'notifications', 'label' => 'Push Provider', 'description' => 'Push notification provider (firebase, onesignal)', 'is_mandatory' => false],
+            ['key' => 'firebase_server_key', 'value' => '', 'type' => 'string', 'group' => 'notifications', 'label' => 'Firebase Server Key', 'description' => 'Firebase Cloud Messaging server key', 'is_mandatory' => false],
+            ['key' => 'in_app_notifications', 'value' => 'true', 'type' => 'boolean', 'group' => 'notifications', 'label' => 'In-App Notifications', 'description' => 'Enable in-app notification bell', 'is_mandatory' => false],
         ];
     }
 }

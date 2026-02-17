@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Text as RNText, Platform, useWindowDimensions } from 'react-native';
-import { TextInput, Text, Surface } from 'react-native-paper';
+import { TextInput, Text, Surface, Snackbar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +15,12 @@ export default function CreatePartyScreen() {
   const { width } = useWindowDimensions();
   const isWeb = Platform.OS === 'web' && width > 768;
 
-  const [form, setForm] = useState({
+  const nameRef = useRef<any>(null);
+  const mobileRef = useRef<any>(null);
+  const [showOptional, setShowOptional] = useState(false);
+  const [snackbar, setSnackbar] = useState('');
+
+  const emptyForm = {
     name: '',
     mobile: '',
     email: '',
@@ -25,8 +30,17 @@ export default function CreatePartyScreen() {
     opening_balance: '',
     opening_balance_type: 'dr',
     notes: '',
-  });
+  };
+  const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    // Auto-focus name field on mount
+    const timer = setTimeout(() => nameRef.current?.focus(), 400);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const [addAnother, setAddAnother] = useState(false);
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
@@ -35,22 +49,54 @@ export default function CreatePartyScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parties'] });
-      router.back();
+      if (addAnother) {
+        setForm(emptyForm);
+        setErrors({});
+        setShowOptional(false);
+        setSnackbar('Party saved! Add another.');
+        setAddAnother(false);
+        setTimeout(() => nameRef.current?.focus(), 300);
+      } else {
+        router.back();
+      }
     },
     onError: (error: any) => {
       if (error.response?.data?.errors) {
-        setErrors(error.response.data.errors);
+        const errs = error.response.data.errors;
+        const flat: Record<string, string> = {};
+        Object.entries(errs).forEach(([k, v]) => { flat[k] = Array.isArray(v) ? v[0] : String(v); });
+        setErrors(flat);
+      } else {
+        setSnackbar(error.response?.data?.message || 'Failed to save party');
       }
     },
   });
 
-  const handleSubmit = () => {
-    const data: any = { ...form };
-    if (form.opening_balance) {
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!form.name.trim()) newErrors.name = t('party.nameRequired');
+    if (form.mobile.trim() && form.mobile.trim().length < 10) newErrors.mobile = t('party.invalidMobile');
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) newErrors.email = t('party.invalidEmail');
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (saveAndAdd = false) => {
+    if (!validate()) return;
+    setAddAnother(saveAndAdd);
+    const data: any = {
+      name: form.name.trim(),
+      type: form.type,
+    };
+    // Only include non-empty optional fields
+    if (form.mobile.trim()) data.mobile = form.mobile.trim();
+    if (form.email.trim()) data.email = form.email.trim();
+    if (form.city.trim()) data.city = form.city.trim();
+    if (form.address.trim()) data.address = form.address.trim();
+    if (form.notes.trim()) data.notes = form.notes.trim();
+    if (form.opening_balance && parseFloat(form.opening_balance) > 0) {
       data.opening_balance = parseFloat(form.opening_balance);
-    } else {
-      delete data.opening_balance;
-      delete data.opening_balance_type;
+      data.opening_balance_type = form.opening_balance_type;
     }
     mutation.mutate(data);
   };
@@ -93,43 +139,54 @@ export default function CreatePartyScreen() {
       {/* Basic Info */}
       <Text style={s.sectionLabel}>BASIC INFORMATION</Text>
       <Surface style={s.formCard}>
-        <TextInput label={t('party.name')} value={form.name} onChangeText={(v) => updateField('name', v)} error={!!errors.name} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="account" />} />
+        <TextInput ref={nameRef} label={t('party.name')} value={form.name} onChangeText={(v) => updateField('name', v)} error={!!errors.name} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="account" />} returnKeyType="next" onSubmitEditing={() => mobileRef.current?.focus()} autoFocus={false} />
         {errors.name && <Text style={s.error}>{errors.name}</Text>}
-        <TextInput label={t('party.mobile')} value={form.mobile} onChangeText={(v) => updateField('mobile', v)} keyboardType="phone-pad" error={!!errors.mobile} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="phone" />} />
+        <TextInput ref={mobileRef} label={t('party.mobile')} value={form.mobile} onChangeText={(v) => updateField('mobile', v)} keyboardType="phone-pad" error={!!errors.mobile} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="phone" />} returnKeyType="done" />
         {errors.mobile && <Text style={s.error}>{errors.mobile}</Text>}
-        <TextInput label={t('party.email')} value={form.email} onChangeText={(v) => updateField('email', v)} keyboardType="email-address" mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="email-outline" />} />
+        <TextInput label={t('party.email') + ' (optional)'} value={form.email} onChangeText={(v) => updateField('email', v)} keyboardType="email-address" error={!!errors.email} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="email-outline" />} />
+        {errors.email && <Text style={s.error}>{errors.email}</Text>}
       </Surface>
 
-      {/* Location */}
-      <Text style={s.sectionLabel}>LOCATION</Text>
-      <Surface style={s.formCard}>
-        <TextInput label={t('party.city')} value={form.city} onChangeText={(v) => updateField('city', v)} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="map-marker" />} />
-        <TextInput label={t('party.address')} value={form.address} onChangeText={(v) => updateField('address', v)} multiline numberOfLines={2} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="home-outline" />} />
-      </Surface>
+      {/* Collapsible Optional Sections */}
+      <TouchableOpacity style={s.optionalToggle} onPress={() => setShowOptional(!showOptional)} activeOpacity={0.7}>
+        <MaterialCommunityIcons name={showOptional ? 'chevron-up' : 'chevron-down'} size={18} color="#8A8FA8" />
+        <RNText style={s.optionalToggleText}>{showOptional ? 'Hide' : 'Show'} optional fields (location, balance, notes)</RNText>
+      </TouchableOpacity>
 
-      {/* Opening Balance */}
-      <Text style={s.sectionLabel}>OPENING BALANCE</Text>
-      <Surface style={s.formCard}>
-        <TextInput label={t('party.openingBalance')} value={form.opening_balance} onChangeText={(v) => updateField('opening_balance', v)} keyboardType="numeric" mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="currency-inr" />} />
-        {form.opening_balance ? (
-          <View style={s.balanceTypeRow}>
-            <TouchableOpacity style={[s.balanceTypeBtn, form.opening_balance_type === 'dr' && s.balanceTypeDr]} onPress={() => updateField('opening_balance_type', 'dr')}>
-              <MaterialCommunityIcons name="arrow-bottom-left" size={18} color={form.opening_balance_type === 'dr' ? '#fff' : colors.debit} />
-              <RNText style={[s.balanceTypeBtnText, form.opening_balance_type === 'dr' && { color: '#fff' }]}>NAAM (Dr)</RNText>
-            </TouchableOpacity>
-            <TouchableOpacity style={[s.balanceTypeBtn, form.opening_balance_type === 'cr' && s.balanceTypeCr]} onPress={() => updateField('opening_balance_type', 'cr')}>
-              <MaterialCommunityIcons name="arrow-top-right" size={18} color={form.opening_balance_type === 'cr' ? '#fff' : colors.credit} />
-              <RNText style={[s.balanceTypeBtnText, form.opening_balance_type === 'cr' && { color: '#fff' }]}>JAMA (Cr)</RNText>
-            </TouchableOpacity>
-          </View>
-        ) : null}
-      </Surface>
+      {showOptional && (
+        <>
+          {/* Location */}
+          <Text style={s.sectionLabel}>LOCATION</Text>
+          <Surface style={s.formCard}>
+            <TextInput label={t('party.city')} value={form.city} onChangeText={(v) => updateField('city', v)} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="map-marker" />} />
+            <TextInput label={t('party.address')} value={form.address} onChangeText={(v) => updateField('address', v)} multiline numberOfLines={2} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="home-outline" />} />
+          </Surface>
 
-      {/* Notes */}
-      <Text style={s.sectionLabel}>NOTES</Text>
-      <Surface style={s.formCard}>
-        <TextInput label={t('party.notes')} value={form.notes} onChangeText={(v) => updateField('notes', v)} multiline numberOfLines={3} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="note-text-outline" />} />
-      </Surface>
+          {/* Opening Balance */}
+          <Text style={s.sectionLabel}>OPENING BALANCE</Text>
+          <Surface style={s.formCard}>
+            <TextInput label={t('party.openingBalance')} value={form.opening_balance} onChangeText={(v) => updateField('opening_balance', v)} keyboardType="numeric" mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="currency-inr" />} />
+            {form.opening_balance ? (
+              <View style={s.balanceTypeRow}>
+                <TouchableOpacity style={[s.balanceTypeBtn, form.opening_balance_type === 'dr' && s.balanceTypeDr]} onPress={() => updateField('opening_balance_type', 'dr')}>
+                  <MaterialCommunityIcons name="arrow-bottom-left" size={18} color={form.opening_balance_type === 'dr' ? '#fff' : colors.debit} />
+                  <RNText style={[s.balanceTypeBtnText, form.opening_balance_type === 'dr' && { color: '#fff' }]}>NAAM (Dr)</RNText>
+                </TouchableOpacity>
+                <TouchableOpacity style={[s.balanceTypeBtn, form.opening_balance_type === 'cr' && s.balanceTypeCr]} onPress={() => updateField('opening_balance_type', 'cr')}>
+                  <MaterialCommunityIcons name="arrow-top-right" size={18} color={form.opening_balance_type === 'cr' ? '#fff' : colors.credit} />
+                  <RNText style={[s.balanceTypeBtnText, form.opening_balance_type === 'cr' && { color: '#fff' }]}>JAMA (Cr)</RNText>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+          </Surface>
+
+          {/* Notes */}
+          <Text style={s.sectionLabel}>NOTES</Text>
+          <Surface style={s.formCard}>
+            <TextInput label={t('party.notes')} value={form.notes} onChangeText={(v) => updateField('notes', v)} multiline numberOfLines={3} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="note-text-outline" />} />
+          </Surface>
+        </>
+      )}
     </>
   );
 
@@ -150,9 +207,17 @@ export default function CreatePartyScreen() {
             <RNText style={wStyles.cancelText}>Cancel</RNText>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[wStyles.saveBtn, (!form.name || !form.mobile || mutation.isPending) && { opacity: 0.5 }]}
-            onPress={handleSubmit}
-            disabled={mutation.isPending || !form.name || !form.mobile}
+            style={[wStyles.saveAndAddBtn, mutation.isPending && { opacity: 0.5 }]}
+            onPress={() => handleSubmit(true)}
+            disabled={mutation.isPending}
+          >
+            <MaterialCommunityIcons name="plus" size={18} color={colors.primary} />
+            <RNText style={wStyles.saveAndAddText}>Save & Add Another</RNText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[wStyles.saveBtn, mutation.isPending && { opacity: 0.5 }]}
+            onPress={() => handleSubmit(false)}
+            disabled={mutation.isPending}
           >
             <MaterialCommunityIcons name="check" size={18} color="#fff" />
             <RNText style={wStyles.saveBtnText}>{mutation.isPending ? 'Saving...' : 'Save Party'}</RNText>
@@ -164,6 +229,7 @@ export default function CreatePartyScreen() {
             {formContent}
           </View>
         </ScrollView>
+        <Snackbar visible={!!snackbar} onDismiss={() => setSnackbar('')} duration={3000} style={{ backgroundColor: '#2e7d32' }}>{snackbar}</Snackbar>
       </View>
     );
   }
@@ -187,19 +253,29 @@ export default function CreatePartyScreen() {
       <ScrollView contentContainerStyle={mStyles.scroll} showsVerticalScrollIndicator={false}>
         {formContent}
 
-        {/* Submit button */}
+        {/* Submit buttons */}
         <TouchableOpacity
-          style={[s.submitBtn, (!form.name || !form.mobile || mutation.isPending) && s.submitBtnDisabled]}
+          style={[s.submitBtn, mutation.isPending && s.submitBtnDisabled]}
           activeOpacity={0.8}
-          onPress={handleSubmit}
-          disabled={mutation.isPending || !form.name || !form.mobile}
+          onPress={() => handleSubmit(false)}
+          disabled={mutation.isPending}
         >
           <MaterialCommunityIcons name="check-circle" size={22} color="#fff" />
           <RNText style={s.submitText}>{mutation.isPending ? 'Saving...' : t('common.save')}</RNText>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[s.saveAddBtn, mutation.isPending && s.submitBtnDisabled]}
+          activeOpacity={0.8}
+          onPress={() => handleSubmit(true)}
+          disabled={mutation.isPending}
+        >
+          <MaterialCommunityIcons name="plus-circle-outline" size={20} color={colors.primary} />
+          <RNText style={s.saveAddText}>Save & Add Another</RNText>
+        </TouchableOpacity>
 
         <View style={{ height: 30 }} />
       </ScrollView>
+      <Snackbar visible={!!snackbar} onDismiss={() => setSnackbar('')} duration={3000} style={{ backgroundColor: '#2e7d32' }}>{snackbar}</Snackbar>
     </View>
   );
 }
@@ -223,6 +299,10 @@ const s = StyleSheet.create({
   submitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 24, paddingVertical: 16, borderRadius: 16, backgroundColor: colors.primary, elevation: 2 },
   submitBtnDisabled: { opacity: 0.5 },
   submitText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
+  saveAddBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10, paddingVertical: 14, borderRadius: 14, borderWidth: 1.5, borderColor: colors.primary, backgroundColor: '#fff' },
+  saveAddText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
+  optionalToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 18, paddingVertical: 10, paddingHorizontal: 4 },
+  optionalToggleText: { fontSize: 13, color: '#8A8FA8', fontWeight: '500' },
 });
 
 /* ─── Web Styles ─── */
@@ -244,6 +324,12 @@ const wStyles = StyleSheet.create({
     backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10,
   },
   saveBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  saveAndAddBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10,
+    borderWidth: 1.5, borderColor: colors.primary,
+  },
+  saveAndAddText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
   scroll: { padding: 32, paddingBottom: 60 },
   formWrap: { maxWidth: 640 },
 });

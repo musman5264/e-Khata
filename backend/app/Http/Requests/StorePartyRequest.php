@@ -4,6 +4,15 @@ namespace App\Http\Requests;
 
 class StorePartyRequest extends ApiFormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        // Convert empty strings to null for optional fields
+        $this->merge(array_map(
+            fn($v) => $v === '' ? null : $v,
+            $this->only(['mobile', 'email', 'address', 'city', 'khata_number', 'book_number', 'notes', 'opening_balance', 'opening_balance_type'])
+        ));
+    }
+
     public function rules(): array
     {
         $tenantId = app('currentTenant')?->id;

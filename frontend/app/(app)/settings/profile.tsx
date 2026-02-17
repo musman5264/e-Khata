@@ -15,8 +15,8 @@ export default function ProfileSettingsScreen() {
   const { data: user } = useQuery({
     queryKey: ['me'],
     queryFn: async () => {
-      const res = await api.get('/me');
-      return res.data.data;
+      const res = await api.get('/auth/me');
+      return res.data.data?.user || res.data.data;
     },
   });
 
@@ -28,7 +28,7 @@ export default function ProfileSettingsScreen() {
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await api.put('/me', data);
+      const res = await api.put('/auth/profile', data);
       return res.data;
     },
     onSuccess: () => {

@@ -57,26 +57,34 @@ export default function DashboardScreen() {
 
         {/* Stats Grid - 4 columns */}
         <View style={webStyles.statsGrid}>
-          <StatCard
-            icon="arrow-bottom-left" iconBg="#FFF0F0" iconColor={colors.debit}
-            label={t('dashboard.receivable')} hint="Aap ne lena hai"
-            value={formatCurrency(data?.total_receivable ?? 0)} valueColor={colors.debit}
-          />
-          <StatCard
-            icon="arrow-top-right" iconBg="#F0FFF4" iconColor={colors.credit}
-            label={t('dashboard.payable')} hint="Aap ne dena hai"
-            value={formatCurrency(data?.total_payable ?? 0)} valueColor={colors.credit}
-          />
-          <StatCard
-            icon="scale-balance" iconBg="#EEF0FF" iconColor={colors.primary}
-            label={t('dashboard.netBalance')} hint=""
-            value={formatCurrency(data?.net_balance ?? 0)} valueColor={colors.primary}
-          />
-          <StatCard
-            icon="account-group" iconBg="#FFF8E1" iconColor="#F59E0B"
-            label={t('dashboard.parties')} hint="Total parties"
-            value={String(data?.party_count ?? 0)} valueColor="#F59E0B"
-          />
+          <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/(app)/reports/receivable-aging' as any)} activeOpacity={0.7}>
+            <StatCard
+              icon="arrow-bottom-left" iconBg="#FFF0F0" iconColor={colors.debit}
+              label={t('dashboard.receivable')} hint="Aap ne lena hai"
+              value={formatCurrency(data?.total_receivable ?? 0)} valueColor={colors.debit}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/(app)/reports/payable-aging' as any)} activeOpacity={0.7}>
+            <StatCard
+              icon="arrow-top-right" iconBg="#F0FFF4" iconColor={colors.credit}
+              label={t('dashboard.payable')} hint="Aap ne dena hai"
+              value={formatCurrency(data?.total_payable ?? 0)} valueColor={colors.credit}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/(app)/reports' as any)} activeOpacity={0.7}>
+            <StatCard
+              icon="scale-balance" iconBg="#EEF0FF" iconColor={colors.primary}
+              label={t('dashboard.netBalance')} hint=""
+              value={formatCurrency(data?.net_balance ?? 0)} valueColor={colors.primary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/(app)/(tabs)/parties' as any)} activeOpacity={0.7}>
+            <StatCard
+              icon="account-group" iconBg="#FFF8E1" iconColor="#F59E0B"
+              label={t('dashboard.parties')} hint="Total parties"
+              value={String(data?.party_count ?? 0)} valueColor="#F59E0B"
+            />
+          </TouchableOpacity>
         </View>
 
         {/* Quick Actions */}
@@ -173,40 +181,48 @@ export default function DashboardScreen() {
 
           {/* Balance Cards */}
           <View style={mStyles.balanceRow}>
-            <View style={mStyles.balCardRed}>
-              <MaterialCommunityIcons name="arrow-bottom-left" size={20} color={colors.debit} />
-              <Text style={mStyles.balLabel}>{t('dashboard.receivable')}</Text>
-              <Text style={[mStyles.balValue, { color: colors.debit }]}>
-                {formatCurrency(data?.total_receivable ?? 0)}
-              </Text>
-              <Text style={mStyles.balHint}>Aap ne lena hai</Text>
-            </View>
-            <View style={mStyles.balCardGreen}>
-              <MaterialCommunityIcons name="arrow-top-right" size={20} color={colors.credit} />
-              <Text style={mStyles.balLabel}>{t('dashboard.payable')}</Text>
-              <Text style={[mStyles.balValue, { color: colors.credit }]}>
-                {formatCurrency(data?.total_payable ?? 0)}
-              </Text>
-              <Text style={mStyles.balHint}>Aap ne dena hai</Text>
-            </View>
+            <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/(app)/reports/receivable-aging' as any)} activeOpacity={0.7}>
+              <View style={mStyles.balCardRed}>
+                <MaterialCommunityIcons name="arrow-bottom-left" size={20} color={colors.debit} />
+                <Text style={mStyles.balLabel}>{t('dashboard.receivable')}</Text>
+                <Text style={[mStyles.balValue, { color: colors.debit }]}>
+                  {formatCurrency(data?.total_receivable ?? 0)}
+                </Text>
+                <Text style={mStyles.balHint}>Aap ne lena hai</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/(app)/reports/payable-aging' as any)} activeOpacity={0.7}>
+              <View style={mStyles.balCardGreen}>
+                <MaterialCommunityIcons name="arrow-top-right" size={20} color={colors.credit} />
+                <Text style={mStyles.balLabel}>{t('dashboard.payable')}</Text>
+                <Text style={[mStyles.balValue, { color: colors.credit }]}>
+                  {formatCurrency(data?.total_payable ?? 0)}
+                </Text>
+                <Text style={mStyles.balHint}>Aap ne dena hai</Text>
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
 
         {/* Net Balance */}
-        <Surface style={mStyles.netCard}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <View style={mStyles.netIcon}>
-              <MaterialCommunityIcons name="scale-balance" size={18} color={colors.primary} />
-            </View>
+        <TouchableOpacity activeOpacity={0.7} onPress={() => router.push('/(app)/reports' as any)}>
+          <Surface style={mStyles.netCard}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={mStyles.netIcon}>
+                <MaterialCommunityIcons name="scale-balance" size={18} color={colors.primary} />
+              </View>
             <View>
               <Text style={mStyles.netLabel}>{t('dashboard.netBalance')}</Text>
               <Text style={mStyles.netValue}>{formatCurrency(data?.net_balance ?? 0)}</Text>
             </View>
           </View>
-          <View style={mStyles.partyBadge}>
-            <Text style={mStyles.partyBadgeText}>{data?.party_count ?? 0} parties</Text>
-          </View>
-        </Surface>
+          <TouchableOpacity onPress={() => router.push('/(app)/(tabs)/parties' as any)} activeOpacity={0.7}>
+            <View style={mStyles.partyBadge}>
+              <Text style={mStyles.partyBadgeText}>{data?.party_count ?? 0} parties</Text>
+            </View>
+          </TouchableOpacity>
+          </Surface>
+        </TouchableOpacity>
 
         {/* Quick Actions */}
         <View style={mStyles.quickRow}>

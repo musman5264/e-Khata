@@ -145,4 +145,67 @@ class TransactionController extends Controller
             'message' => 'Transaction deleted successfully.',
         ]);
     }
+
+    // ──────────────────────────────────────────────────────
+    // Flat routes (no party prefix — convenience endpoints)
+    // ──────────────────────────────────────────────────────
+
+    /**
+     * GET /api/v1/transactions/{id}
+     */
+    public function showFlat(int $id): JsonResponse
+    {
+        $this->authorize('view_ledger');
+
+        $transaction = Transaction::with('party', 'user', 'payment')->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $transaction,
+        ]);
+    }
+
+    /**
+     * PUT /api/v1/transactions/{id}
+     */
+    public function updateFlat(Request $request, int $id): JsonResponse
+    {
+        $this->authorize('edit_transaction');
+
+        $transaction = Transaction::findOrFail($id);
+
+        $request->validate([
+            'type' => 'sometimes|in:debit,credit',
+            'amount' => 'sometimes|numeric|gt:0',
+            'date' => 'sometimes|date',
+            'description' => 'nullable|string|max:500',
+            'reference_number' => 'nullable|string|max:100',
+        ]);
+
+        $transaction = $this->ledgerService->updateTransaction($transaction, $request->only([
+            'type', 'amount', 'date', 'description', 'reference_number',
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Transaction updated successfully.',
+            'data' => $transaction->load('party', 'user'),
+        ]);
+    }
+
+    /**
+     * DELETE /api/v1/transactions/{id}
+     */
+    public function destroyFlat(int $id): JsonResponse
+    {
+        $this->authorize('delete_transaction');
+
+        $transaction = Transaction::findOrFail($id);
+        $this->ledgerService->deleteTransaction($transaction);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Transaction deleted successfully.',
+        ]);
+    }
 }

@@ -21,6 +21,7 @@ export default function EditTransactionScreen() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const params2 = useLocalSearchParams<{ party_id?: string }>();
   const { data: txn } = useQuery({
     queryKey: ['transaction', id],
     queryFn: async () => {
@@ -42,6 +43,7 @@ export default function EditTransactionScreen() {
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
+      const partyId = txn?.party_id || params2.party_id;
       const res = await api.put(`/transactions/${id}`, {
         ...data,
         amount: parseFloat(data.amount),

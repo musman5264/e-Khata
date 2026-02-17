@@ -202,4 +202,148 @@ class ReportController extends Controller
             ],
         ]);
     }
+
+    /**
+     * GET /api/v1/reports/party-ledger/{partyId}
+     * Full transaction history for a party.
+     */
+    public function partyLedger(Request $request, int $partyId): JsonResponse
+    {
+        $this->authorize('view_reports');
+
+        $party = Party::findOrFail($partyId);
+        $query = Transaction::where('party_id', $partyId);
+
+        if ($request->has('date_from') && $request->has('date_to')) {
+            $query->whereBetween('date', [$request->date_from, $request->date_to]);
+        }
+
+        $transactions = $query->orderBy('date')->orderBy('id')->get()
+            ->map(fn($txn) => [
+                'id' => $txn->id,
+                'date' => $txn->date->format('Y-m-d'),
+                'type' => $txn->type,
+                'amount' => (float)$txn->amount,
+                'description' => $txn->description,
+                'reference_number' => $txn->reference_number,
+                'running_balance' => (float)$txn->running_balance,
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'party' => [
+                    'id' => $party->id,
+                    'name' => $party->name,
+                    'mobile' => $party->mobile,
+                    'type' => $party->type,
+                    'opening_balance' => (float)$party->opening_balance,
+                    'opening_balance_type' => $party->opening_balance_type,
+                ],
+                'transactions' => $transactions,
+                'totals' => [
+                    'total_debit' => $transactions->where('type', 'debit')->sum('amount'),
+                    'total_credit' => $transactions->where('type', 'credit')->sum('amount'),
+                    'balance' => $party->current_balance,
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * GET /api/v1/reports/payment-summary
+     */
+    public function paymentSummary(Request $request): JsonResponse
+    {
+        $this->authorize('view_reports');
+
+        $query = \App\Models\Payment::query();
+
+        if ($request->has('date_from') && $request->has('date_to')) {
+            $query->whereBetween('created_at', [$request->date_from, $request->date_to]);
+        }
+
+        $payments = $query->orderByDesc('created_at')->get();
+
+        $summary = [
+            'total_collected' => $payments->where('type', 'collect')->where('status', 'completed')->sum('amount'),
+            'total_sent' => $payments->where('type', 'send')->where('status', 'completed')->sum('amount'),
+            'total_pending' => $payments->where('status', 'pending')->sum('amount'),
+            'total_failed' => $payments->where('status', 'failed')->sum('amount'),
+            'count' => $payments->count(),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'summary' => $summary,
+                'payments' => $payments->take(50)->map(fn($p) => [
+                    'id' => $p->id,
+                    'type' => $p->type,
+                    'amount' => (float)$p->amount,
+                    'status' => $p->status,
+                    'gateway' => $p->gateway,
+                    'created_at' => $p->created_at->format('Y-m-d H:i'),
+                ]),
+            ],
+        ]);
+    }
+
+    /**
+     * GET /api/v1/reports/receivable-aging
+     * Parties who owe money (debit balance > 0).
+     */
+    public function receivableAging(): JsonResponse
+    {
+        $this->authorize('view_reports');
+
+        $parties = Party::where('is_active', true)->orderBy('name')->get()
+            ->filter(fn($p) => $p->current_balance > 0)
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'mobile' => $p->mobile,
+                'balance' => (float)$p->current_balance,
+                'last_txn_date' => $p->transactions()->orderByDesc('date')->value('date'),
+            ])
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'parties' => $parties,
+                'total' => $parties->sum('balance'),
+                'count' => $parties->count(),
+            ],
+        ]);
+    }
+
+    /**
+     * GET /api/v1/reports/payable-aging
+     * Parties we owe money to (credit balance < 0).
+     */
+    public function payableAging(): JsonResponse
+    {
+        $this->authorize('view_reports');
+
+        $parties = Party::where('is_active', true)->orderBy('name')->get()
+            ->filter(fn($p) => $p->current_balance < 0)
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'mobile' => $p->mobile,
+                'balance' => abs((float)$p->current_balance),
+                'last_txn_date' => $p->transactions()->orderByDesc('date')->value('date'),
+            ])
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'parties' => $parties,
+                'total' => $parties->sum('balance'),
+                'count' => $parties->count(),
+            ],
+        ]);
+    }
 }

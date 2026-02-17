@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { colors } from '@/theme';
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -19,7 +20,7 @@ const MAIN_NAV: NavItem[] = [
   { label: 'Dashboard', icon: 'view-dashboard-outline', activeIcon: 'view-dashboard', path: '/(app)/(tabs)/dashboard', match: 'dashboard' },
   { label: 'Parties', icon: 'account-group-outline', activeIcon: 'account-group', path: '/(app)/(tabs)/parties', match: 'parties' },
   { label: 'Daybook', icon: 'book-open-page-variant-outline', activeIcon: 'book-open-page-variant', path: '/(app)/(tabs)/daybook', match: 'daybook' },
-  { label: 'Reports', icon: 'chart-bar', activeIcon: 'chart-bar', path: '/(app)/reports/trial-balance', match: 'reports' },
+  { label: 'Reports', icon: 'chart-bar', activeIcon: 'chart-bar', path: '/(app)/reports', match: 'reports' },
   { label: 'Team', icon: 'account-multiple-outline', activeIcon: 'account-multiple', path: '/(app)/team/members', match: 'team' },
   { label: 'Payments', icon: 'credit-card-outline', activeIcon: 'credit-card', path: '/(app)/payment/history', match: 'payment' },
 ];
@@ -34,6 +35,7 @@ const SETTINGS_NAV: NavItem[] = [
 
 const ADMIN_NAV: NavItem[] = [
   { label: 'Dashboard', icon: 'monitor-dashboard', activeIcon: 'monitor-dashboard', path: '/(app)/admin/dashboard', match: 'admin/dashboard' },
+  { label: 'Reports', icon: 'chart-box-outline', activeIcon: 'chart-box', path: '/(app)/admin/reports', match: 'admin/reports' },
   { label: 'Settings', icon: 'cog-outline', activeIcon: 'cog', path: '/(app)/admin/settings', match: 'admin/settings' },
   { label: 'Users', icon: 'account-supervisor-outline', activeIcon: 'account-supervisor', path: '/(app)/admin/users', match: 'admin/users' },
   { label: 'Businesses', icon: 'store-outline', activeIcon: 'store', path: '/(app)/admin/tenants', match: 'admin/tenants' },
@@ -63,8 +65,13 @@ export default function WebSidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
+  const currentTenant = useAuthStore((s) => s.currentTenant);
+  const selectTenant = useAuthStore((s) => s.selectTenant);
   const logout = useAuthStore((s) => s.logout);
-  const isSuperAdmin = user?.roles?.some((r: any) => r.name === 'Super Admin') ?? false;
+  const { isSuperAdmin, canManageTeam } = usePermissions();
+
+  const hasTenant = !!currentTenant;
+  const tenants = user?.tenants ?? [];
 
   const isActive = (item: NavItem) => pathname.includes(item.match);
   const initials = user?.name
@@ -85,16 +92,23 @@ export default function WebSidebar() {
       </View>
 
       <ScrollView style={styles.navScroll} showsVerticalScrollIndicator={false}>
-        {/* Main Navigation */}
-        <Text style={styles.sectionLabel}>MENU</Text>
-        {MAIN_NAV.map((item) => (
-          <SidebarItem
-            key={item.path}
-            item={item}
-            isActive={isActive(item)}
-            onPress={() => router.push(item.path as any)}
-          />
-        ))}
+        {/* Business Navigation (only if tenant selected OR non-admin user) */}
+        {(hasTenant || !isSuperAdmin) && (
+          <>
+            <Text style={styles.sectionLabel}>MENU</Text>
+            {MAIN_NAV.filter(item => {
+              if (item.match === 'team') return canManageTeam;
+              return true;
+            }).map((item) => (
+              <SidebarItem
+                key={item.path}
+                item={item}
+                isActive={isActive(item)}
+                onPress={() => router.push(item.path as any)}
+              />
+            ))}
+          </>
+        )}
 
         {/* Admin */}
         {isSuperAdmin && (
@@ -107,6 +121,35 @@ export default function WebSidebar() {
                 isActive={isActive(item)}
                 onPress={() => router.push(item.path as any)}
               />
+            ))}
+          </>
+        )}
+
+        {/* Tenant selector for SuperAdmin */}
+        {isSuperAdmin && tenants.length > 0 && (
+          <>
+            <Text style={[styles.sectionLabel, { marginTop: 24 }]}>BUSINESS</Text>
+            {tenants.map((t) => (
+              <TouchableOpacity
+                key={t.id}
+                style={[styles.tenantItem, currentTenant?.id === t.id && styles.tenantItemActive]}
+                onPress={() => selectTenant(t)}
+                activeOpacity={0.7}
+              >
+                <MaterialCommunityIcons
+                  name={currentTenant?.id === t.id ? 'store' : 'store-outline'}
+                  size={18}
+                  color={currentTenant?.id === t.id ? colors.primary : '#8A8FA8'}
+                />
+                <Text style={[styles.tenantLabel, currentTenant?.id === t.id && styles.tenantLabelActive]} numberOfLines={1}>
+                  {t.name}
+                </Text>
+                {currentTenant?.id === t.id && (
+                  <View style={styles.tenantBadge}>
+                    <Text style={styles.tenantBadgeText}>Active</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
             ))}
           </>
         )}
@@ -248,5 +291,40 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF0F0',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // Tenant selector
+  tenantItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginBottom: 2,
+    gap: 10,
+  },
+  tenantItemActive: {
+    backgroundColor: colors.primary + '0D',
+  },
+  tenantLabel: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#6C7293',
+  },
+  tenantLabelActive: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  tenantBadge: {
+    backgroundColor: '#F0FFF4',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  tenantBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#10B981',
   },
 });

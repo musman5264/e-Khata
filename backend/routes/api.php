@@ -49,6 +49,8 @@ Route::prefix('v1')->group(function () {
         // Auth
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::get('auth/me', [AuthController::class, 'me']);
+        Route::put('auth/profile', [AuthController::class, 'updateProfile']);
+        Route::put('auth/password', [AuthController::class, 'changePassword']);
 
         // Tenants (no tenant context needed for listing / creating)
         Route::post('tenants', [TenantController::class, 'store']);
@@ -114,11 +116,20 @@ Route::prefix('v1')->group(function () {
             Route::get('payments', [PaymentController::class, 'index']);
             Route::get('payments/{id}', [PaymentController::class, 'show']);
 
+            // Flat transaction routes (convenience — no party prefix needed)
+            Route::get('transactions/{id}', [TransactionController::class, 'showFlat']);
+            Route::put('transactions/{id}', [TransactionController::class, 'updateFlat']);
+            Route::delete('transactions/{id}', [TransactionController::class, 'destroyFlat']);
+
             // Reports
             Route::prefix('reports')->group(function () {
                 Route::get('dashboard', [ReportController::class, 'dashboard']);
                 Route::get('daybook', [ReportController::class, 'daybook']);
                 Route::get('trial-balance', [ReportController::class, 'trialBalance']);
+                Route::get('party-ledger/{partyId}', [ReportController::class, 'partyLedger']);
+                Route::get('payment-summary', [ReportController::class, 'paymentSummary']);
+                Route::get('receivable-aging', [ReportController::class, 'receivableAging']);
+                Route::get('payable-aging', [ReportController::class, 'payableAging']);
             });
 
             // Logs (Owner only — permission checked in controller)
@@ -138,9 +149,24 @@ Route::prefix('v1')->group(function () {
             Route::get('settings', [SystemSettingsController::class, 'index']);
             Route::put('settings', [SystemSettingsController::class, 'update']);
             Route::get('settings/{key}', [SystemSettingsController::class, 'show']);
+
+            // Admin Reports
+            Route::get('reports/users', [SystemSettingsController::class, 'userReport']);
+            Route::get('reports/businesses', [SystemSettingsController::class, 'businessReport']);
+            Route::get('reports/activity', [SystemSettingsController::class, 'activityReport']);
+
+            // User management
             Route::get('users', [SystemSettingsController::class, 'users']);
+            Route::get('users/{id}', [SystemSettingsController::class, 'showUser']);
+            Route::put('users/{id}', [SystemSettingsController::class, 'updateUser']);
+            Route::delete('users/{id}', [SystemSettingsController::class, 'deleteUser']);
             Route::put('users/{id}/toggle-active', [SystemSettingsController::class, 'toggleUserActive']);
+
+            // Tenant/Business management
             Route::get('tenants', [SystemSettingsController::class, 'tenants']);
+            Route::get('tenants/{id}', [SystemSettingsController::class, 'showTenant']);
+            Route::put('tenants/{id}', [SystemSettingsController::class, 'updateTenant']);
+            Route::delete('tenants/{id}', [SystemSettingsController::class, 'deleteTenant']);
         });
     });
 });

@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { usePermissions } from '@/hooks/usePermissions';
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -35,6 +36,7 @@ export default function PartiesScreen() {
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const { width } = useWindowDimensions();
   const isWeb = Platform.OS === 'web' && width > 768;
+  const { canManageParties } = usePermissions();
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['parties', search, typeFilter],
@@ -66,10 +68,12 @@ export default function PartiesScreen() {
             <Text style={wStyles.title}>Parties</Text>
             <Text style={wStyles.subtitle}>{data?.length ?? 0} total parties</Text>
           </View>
-          <TouchableOpacity style={wStyles.addBtn} onPress={() => router.push('/(app)/party/create')}>
-            <MaterialCommunityIcons name="plus" size={18} color="#fff" />
-            <Text style={wStyles.addBtnText}>New Party</Text>
-          </TouchableOpacity>
+          {canManageParties && (
+            <TouchableOpacity style={wStyles.addBtn} onPress={() => router.push('/(app)/party/create')}>
+              <MaterialCommunityIcons name="plus" size={18} color="#fff" />
+              <Text style={wStyles.addBtnText}>New Party</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Search + filters */}
@@ -254,13 +258,15 @@ export default function PartiesScreen() {
       />
 
       {/* FAB */}
-      <TouchableOpacity
-        style={mStyles.fab}
-        activeOpacity={0.85}
-        onPress={() => router.push('/(app)/party/create')}
-      >
-        <MaterialCommunityIcons name="plus" size={26} color="#fff" />
-      </TouchableOpacity>
+      {canManageParties && (
+        <TouchableOpacity
+          style={mStyles.fab}
+          activeOpacity={0.85}
+          onPress={() => router.push('/(app)/party/create')}
+        >
+          <MaterialCommunityIcons name="plus" size={26} color="#fff" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

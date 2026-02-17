@@ -25,9 +25,10 @@ export default function CreateTransactionScreen() {
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await api.post('/transactions', {
-        ...data,
-        amount: parseFloat(data.amount),
+      const { party_id, ...txnData } = data;
+      const res = await api.post(`/parties/${party_id}/transactions`, {
+        ...txnData,
+        amount: parseFloat(txnData.amount),
       });
       return res.data;
     },

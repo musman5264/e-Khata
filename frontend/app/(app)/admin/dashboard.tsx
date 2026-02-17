@@ -1,11 +1,16 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, Surface, ActivityIndicator } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 
 export default function AdminDashboardScreen() {
+  const { t } = useTranslation();
+  const router = useRouter();
+
   const { data, isLoading } = useQuery({
     queryKey: ['admin-dashboard'],
     queryFn: async () => {
@@ -23,27 +28,34 @@ export default function AdminDashboardScreen() {
   }
 
   const stats = [
-    { label: 'Total Users', value: data?.total_users ?? 0, icon: '👥' },
-    { label: 'Active Users', value: data?.active_users ?? 0, icon: '✅' },
-    { label: 'Total Businesses', value: data?.total_tenants ?? 0, icon: '🏢' },
-    { label: 'Active Businesses', value: data?.active_tenants ?? 0, icon: '🟢' },
-    { label: 'Total Parties', value: data?.total_parties ?? 0, icon: '🤝' },
-    { label: 'Total Transactions', value: data?.total_transactions ?? 0, icon: '📝' },
+    { label: t('dashboard.totalUsers'), value: data?.total_users ?? 0, icon: '👥', route: '/(app)/admin/reports/users' },
+    { label: t('dashboard.activeUsers'), value: data?.active_users ?? 0, icon: '✅', route: '/(app)/admin/reports/activity' },
+    { label: t('dashboard.totalBusinesses'), value: data?.total_tenants ?? 0, icon: '🏢', route: '/(app)/admin/reports/businesses' },
+    { label: t('dashboard.activeBusinesses'), value: data?.active_tenants ?? 0, icon: '🟢', route: '/(app)/admin/tenants' },
+    { label: t('dashboard.totalParties'), value: data?.total_parties ?? 0, icon: '🤝', route: '/(app)/admin/reports/businesses' },
+    { label: t('dashboard.totalTransactions'), value: data?.total_transactions ?? 0, icon: '📝', route: '/(app)/admin/reports/businesses' },
   ];
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text variant="headlineSmall" style={styles.title}>System Overview</Text>
+      <Text variant="headlineSmall" style={styles.title}>{t('dashboard.systemOverview')}</Text>
 
       <View style={styles.grid}>
         {stats.map((stat) => (
-          <Surface key={stat.label} style={styles.card}>
-            <Text style={styles.icon}>{stat.icon}</Text>
-            <Text variant="headlineMedium" style={styles.value}>
-              {stat.value}
-            </Text>
-            <Text variant="bodySmall" style={styles.statLabel}>{stat.label}</Text>
-          </Surface>
+          <TouchableOpacity
+            key={stat.label}
+            style={styles.cardWrap}
+            activeOpacity={0.7}
+            onPress={() => router.push(stat.route as any)}
+          >
+            <Surface style={styles.card}>
+              <Text style={styles.icon}>{stat.icon}</Text>
+              <Text variant="headlineMedium" style={styles.value}>
+                {stat.value}
+              </Text>
+              <Text variant="bodySmall" style={styles.statLabel}>{stat.label}</Text>
+            </Surface>
+          </TouchableOpacity>
         ))}
       </View>
     </ScrollView>
@@ -60,13 +72,15 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  card: {
+  cardWrap: {
     width: '48%',
+    marginBottom: spacing.xs,
+  },
+  card: {
     padding: spacing.base,
     borderRadius: 12,
     alignItems: 'center',
     elevation: 2,
-    marginBottom: spacing.xs,
   },
   icon: { fontSize: 28, marginBottom: 6 },
   value: { fontWeight: '700', color: colors.primary },

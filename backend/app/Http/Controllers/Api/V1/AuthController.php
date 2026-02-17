@@ -144,4 +144,57 @@ class AuthController extends Controller
             ],
         ]);
     }
+
+    /**
+     * PUT /api/v1/auth/profile
+     */
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'email' => 'nullable|email|unique:users,email,' . $user->id,
+            'language_pref' => 'sometimes|in:en,ur',
+        ]);
+
+        $user->update($request->only(['name', 'email', 'language_pref']));
+
+        $this->activityLog->logAction('profile_updated', 'User updated their profile');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile updated successfully.',
+            'data' => $user->fresh()->load('roles', 'tenants'),
+        ]);
+    }
+
+    /**
+     * PUT /api/v1/auth/password
+     */
+    public function changePassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Current password is incorrect.',
+            ], 422);
+        }
+
+        $user->update(['password' => Hash::make($request->password)]);
+
+        $this->activityLog->logAction('password_changed', 'User changed their password');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password changed successfully.',
+        ]);
+    }
 }
