@@ -60,11 +60,11 @@ export default function PartyStatementScreen() {
           <MaterialCommunityIcons name="file-document-outline" size={28} color="#E84393" />
           <Text variant="headlineSmall" style={styles.title}>Party Statement</Text>
         </View>
-        {entries.length > 0 && <ReportActions />}
+        {entries.length > 0 && <ReportActions reportTitle="Party_Statement" />}
       </View>
 
       {/* Filters */}
-      <Surface style={styles.filterCard}>
+      <Surface style={styles.filterCard} nativeID="report-filter-card">
         <View style={[styles.filterGrid, isWide && { flexDirection: 'row' }]}>
           <View style={{ flex: isWide ? 2 : 1, minWidth: 200 }}>
             <Text variant="labelMedium" style={styles.filterLabel}>Select Party</Text>
@@ -99,7 +99,7 @@ export default function PartyStatementScreen() {
 
       {/* Statement */}
       {statement && (
-        <>
+        <View nativeID="printable-report">
           {/* Business + Party Info Header */}
           <Surface style={styles.statementHeader}>
             <View style={{ alignItems: 'center', marginBottom: 16 }}>
@@ -208,7 +208,7 @@ export default function PartyStatementScreen() {
               </View>
             </View>
           </Surface>
-        </>
+        </View>
       )}
 
       {!isLoading && selectedPartyId && !statement && (

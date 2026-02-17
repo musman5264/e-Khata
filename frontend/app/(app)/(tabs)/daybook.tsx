@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, Text as RNText, Platform, useWindowDimensions } from 'react-native';
-import { Text, Surface } from 'react-native-paper';
+import { Text, Surface, TextInput, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -8,6 +8,7 @@ import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate as fmtDate } from '@/utils/formatDate';
+import ReportActions from '@/components/ReportActions';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -25,18 +26,29 @@ function formatDateDisplay(dateStr: string) {
 export default function DaybookScreen() {
   const { t } = useTranslation();
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [rangeMode, setRangeMode] = useState(false);
   const { width } = useWindowDimensions();
   const isWeb = Platform.OS === 'web' && width > 768;
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['daybook', date],
+    queryKey: ['daybook', rangeMode ? `${dateFrom}-${dateTo}` : date],
     queryFn: async () => {
-      const res = await api.get('/reports/daybook', { params: { date } });
+      const params: any = {};
+      if (rangeMode && dateFrom && dateTo) {
+        params.date_from = dateFrom;
+        params.date_to = dateTo;
+      } else {
+        params.date = date;
+      }
+      const res = await api.get('/reports/daybook', { params });
       return res.data.data;
     },
   });
 
   const changeDate = (days: number) => {
+    if (rangeMode) return;
     const d = new Date(date);
     d.setDate(d.getDate() + days);
     setDate(d.toISOString().split('T')[0]);
@@ -45,6 +57,7 @@ export default function DaybookScreen() {
   const totalDebit = data?.totals?.total_debit ?? 0;
   const totalCredit = data?.totals?.total_credit ?? 0;
   const net = totalDebit - totalCredit;
+  const hasData = (data?.transactions?.length ?? 0) > 0;
 
   // ═══════════════════════════════════
   // WEB VIEW
@@ -58,23 +71,81 @@ export default function DaybookScreen() {
             <Text style={wStyles.title}>Daybook</Text>
             <Text style={wStyles.subtitle}>Daily transaction ledger</Text>
           </View>
+          {hasData && <ReportActions reportTitle="Daybook" />}
         </View>
 
-        {/* Date + Stats row */}
-        <View style={wStyles.statsRow}>
-          <Surface style={wStyles.dateCard}>
-            <TouchableOpacity onPress={() => changeDate(-1)} style={wStyles.dateArrow}>
-              <MaterialCommunityIcons name="chevron-left" size={24} color={colors.primary} />
-            </TouchableOpacity>
-            <View style={wStyles.dateCenter}>
-              <Text style={wStyles.dateLabel}>{formatDateDisplay(date)}</Text>
-              <Text style={wStyles.dateValue}>{fmtDate(date)}</Text>
-            </View>
-            <TouchableOpacity onPress={() => changeDate(1)} style={wStyles.dateArrow}>
-              <MaterialCommunityIcons name="chevron-right" size={24} color={colors.primary} />
-            </TouchableOpacity>
-          </Surface>
+        {/* Date Filter Card */}
+        <Surface style={wStyles.filterCard} nativeID="report-filter-card">
+          <View style={{ flexDirection: 'row', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+            {/* Single Day Navigator */}
+            <Surface style={wStyles.dateCard}>
+              <TouchableOpacity onPress={() => changeDate(-1)} style={wStyles.dateArrow} disabled={rangeMode}>
+                <MaterialCommunityIcons name="chevron-left" size={24} color={rangeMode ? '#ccc' : colors.primary} />
+              </TouchableOpacity>
+              <View style={wStyles.dateCenter}>
+                <Text style={wStyles.dateLabel}>{formatDateDisplay(date)}</Text>
+                <Text style={wStyles.dateValue}>{fmtDate(date)}</Text>
+              </View>
+              <TouchableOpacity onPress={() => changeDate(1)} style={wStyles.dateArrow} disabled={rangeMode}>
+                <MaterialCommunityIcons name="chevron-right" size={24} color={rangeMode ? '#ccc' : colors.primary} />
+              </TouchableOpacity>
+            </Surface>
 
+            {/* Date Range Toggle */}
+            <TouchableOpacity
+              style={[wStyles.rangeToggle, rangeMode && wStyles.rangeToggleActive]}
+              onPress={() => setRangeMode(!rangeMode)}
+            >
+              <MaterialCommunityIcons name="calendar-range" size={18} color={rangeMode ? '#fff' : colors.primary} />
+              <Text style={{ fontSize: 12, fontWeight: '600', color: rangeMode ? '#fff' : colors.primary, marginLeft: 6 }}>
+                Date Range
+              </Text>
+            </TouchableOpacity>
+
+            {/* Date Range Inputs */}
+            {rangeMode && (
+              <>
+                <View style={{ minWidth: 150 }}>
+                  <Text style={{ fontSize: 11, color: '#8A8FA8', marginBottom: 4, fontWeight: '600' }}>From</Text>
+                  <TextInput
+                    mode="outlined"
+                    value={dateFrom}
+                    onChangeText={setDateFrom}
+                    placeholder="YYYY-MM-DD"
+                    dense
+                    style={{ backgroundColor: '#fff', fontSize: 13 }}
+                  />
+                </View>
+                <View style={{ minWidth: 150 }}>
+                  <Text style={{ fontSize: 11, color: '#8A8FA8', marginBottom: 4, fontWeight: '600' }}>To</Text>
+                  <TextInput
+                    mode="outlined"
+                    value={dateTo}
+                    onChangeText={setDateTo}
+                    placeholder="YYYY-MM-DD"
+                    dense
+                    style={{ backgroundColor: '#fff', fontSize: 13 }}
+                  />
+                </View>
+                <Button
+                  mode="contained"
+                  onPress={() => refetch()}
+                  disabled={!dateFrom || !dateTo}
+                  style={{ borderRadius: 8, height: 40, justifyContent: 'center' }}
+                  icon="magnify"
+                  compact
+                >
+                  Filter
+                </Button>
+              </>
+            )}
+          </View>
+        </Surface>
+
+        {/* Printable report area */}
+        <View nativeID="printable-report">
+        {/* Stats row */}
+        <View style={wStyles.statsRow}>
           <Surface style={wStyles.statCard}>
             <View style={[wStyles.statIcon, { backgroundColor: '#FFF0F0' }]}>
               <MaterialCommunityIcons name="arrow-bottom-left" size={18} color={colors.debit} />
@@ -148,6 +219,7 @@ export default function DaybookScreen() {
             }
           />
         </Surface>
+        </View>
       </View>
     );
   }
@@ -157,20 +229,72 @@ export default function DaybookScreen() {
   // ═══════════════════════════════════
   return (
     <View style={mStyles.container}>
+      {/* Header with ReportActions */}
+      {hasData && (
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: spacing.base, paddingTop: 8 }}>
+          <ReportActions reportTitle="Daybook" compact />
+        </View>
+      )}
+
       {/* Date Navigator */}
-      <Surface style={mStyles.dateBar}>
-        <TouchableOpacity onPress={() => changeDate(-1)} style={mStyles.dateArrow}>
-          <MaterialCommunityIcons name="chevron-left" size={28} color={colors.primary} />
+      <Surface style={mStyles.dateBar} nativeID="report-filter-card">
+        <TouchableOpacity onPress={() => changeDate(-1)} style={mStyles.dateArrow} disabled={rangeMode}>
+          <MaterialCommunityIcons name="chevron-left" size={28} color={rangeMode ? '#ccc' : colors.primary} />
         </TouchableOpacity>
         <View style={mStyles.dateCenter}>
           <Text style={mStyles.dateLabel}>{formatDateDisplay(date)}</Text>
           <Text style={mStyles.dateValue}>{fmtDate(date)}</Text>
         </View>
-        <TouchableOpacity onPress={() => changeDate(1)} style={mStyles.dateArrow}>
-          <MaterialCommunityIcons name="chevron-right" size={28} color={colors.primary} />
+        <TouchableOpacity onPress={() => changeDate(1)} style={mStyles.dateArrow} disabled={rangeMode}>
+          <MaterialCommunityIcons name="chevron-right" size={28} color={rangeMode ? '#ccc' : colors.primary} />
         </TouchableOpacity>
       </Surface>
 
+      {/* Date Range Toggle + Inputs */}
+      <View style={{ paddingHorizontal: spacing.base, marginTop: 8 }}>
+        <TouchableOpacity
+          style={[mStyles.rangeToggle, rangeMode && mStyles.rangeToggleActive]}
+          onPress={() => setRangeMode(!rangeMode)}
+        >
+          <MaterialCommunityIcons name="calendar-range" size={16} color={rangeMode ? '#fff' : colors.primary} />
+          <Text style={{ fontSize: 12, fontWeight: '600', color: rangeMode ? '#fff' : colors.primary, marginLeft: 6 }}>
+            Date Range Filter
+          </Text>
+        </TouchableOpacity>
+
+        {rangeMode && (
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+            <TextInput
+              mode="outlined"
+              value={dateFrom}
+              onChangeText={setDateFrom}
+              placeholder="From (YYYY-MM-DD)"
+              dense
+              style={{ flex: 1, backgroundColor: '#fff', fontSize: 12 }}
+            />
+            <TextInput
+              mode="outlined"
+              value={dateTo}
+              onChangeText={setDateTo}
+              placeholder="To (YYYY-MM-DD)"
+              dense
+              style={{ flex: 1, backgroundColor: '#fff', fontSize: 12 }}
+            />
+            <Button
+              mode="contained"
+              onPress={() => refetch()}
+              disabled={!dateFrom || !dateTo}
+              compact
+              style={{ borderRadius: 8, justifyContent: 'center' }}
+            >
+              Go
+            </Button>
+          </View>
+        )}
+      </View>
+
+      {/* Printable area */}
+      <View nativeID="printable-report">
       {/* Summary Cards */}
       <View style={mStyles.summaryRow}>
         <View style={[mStyles.summaryCard, { backgroundColor: '#FFF0F0' }]}>
@@ -239,6 +363,7 @@ export default function DaybookScreen() {
           </View>
         }
       />
+      </View>
     </View>
   );
 }
@@ -250,6 +375,11 @@ const wStyles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '700', color: colors.text },
   subtitle: { fontSize: 13, color: '#8A8FA8', marginTop: 2 },
 
+  filterCard: {
+    padding: 16, borderRadius: 14, backgroundColor: '#fff', elevation: 1, marginBottom: 24,
+    borderWidth: 1, borderColor: '#ECEEF5',
+  },
+
   statsRow: { flexDirection: 'row', gap: 16, marginBottom: 24 },
   dateCard: {
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 6,
@@ -260,6 +390,14 @@ const wStyles = StyleSheet.create({
   dateCenter: { flex: 1, alignItems: 'center' },
   dateLabel: { fontSize: 15, fontWeight: '700', color: colors.text },
   dateValue: { fontSize: 11, color: '#8A8FA8', marginTop: 1 },
+
+  rangeToggle: {
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 10,
+    borderRadius: 10, borderWidth: 1, borderColor: colors.primary, backgroundColor: '#fff',
+  },
+  rangeToggleActive: {
+    backgroundColor: colors.primary, borderColor: colors.primary,
+  },
 
   statCard: {
     flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12,
@@ -292,7 +430,16 @@ const mStyles = StyleSheet.create({
   dateLabel: { fontSize: 16, fontWeight: '700', color: colors.text },
   dateValue: { fontSize: 11, color: '#8A8FA8', marginTop: 2 },
 
-  summaryRow: { flexDirection: 'row', gap: 12, paddingHorizontal: spacing.base },
+  rangeToggle: {
+    flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
+    borderWidth: 1, borderColor: colors.primary, backgroundColor: '#fff',
+  },
+  rangeToggleActive: {
+    backgroundColor: colors.primary, borderColor: colors.primary,
+  },
+
+  summaryRow: { flexDirection: 'row', gap: 12, paddingHorizontal: spacing.base, marginTop: 8 },
   summaryCard: { flex: 1, borderRadius: 16, padding: 16, alignItems: 'center' },
   summaryIcon: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   summaryLabel: { fontSize: 10, fontWeight: '700', color: '#B0B5C8', letterSpacing: 0.5, marginTop: 8 },

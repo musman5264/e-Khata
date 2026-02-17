@@ -42,11 +42,11 @@ export default function CashFlowScreen() {
           <MaterialCommunityIcons name="chart-line" size={28} color="#8B5CF6" />
           <Text variant="headlineSmall" style={styles.title}>Cash Flow Summary</Text>
         </View>
-        {periods.length > 0 && <ReportActions />}
+        {periods.length > 0 && <ReportActions reportTitle="Cash_Flow" />}
       </View>
 
       {/* Filters */}
-      <Surface style={styles.filterCard}>
+      <Surface style={styles.filterCard} nativeID="report-filter-card">
         <View style={[styles.filterGrid, isWide && { flexDirection: 'row' }]}>
           <View style={{ flex: 1 }}>
             <Text variant="labelMedium" style={styles.filterLabel}>Period</Text>
@@ -95,6 +95,7 @@ export default function CashFlowScreen() {
       </Surface>
 
       {/* Summary Cards */}
+      <View nativeID="printable-report">
       {totals && (
         <View style={styles.summaryGrid}>
           <Surface style={[styles.summaryCard, { borderLeftColor: colors.debit }]}>
@@ -182,6 +183,7 @@ export default function CashFlowScreen() {
           <Text style={{ color: colors.textSecondary, marginTop: 8 }}>No cash flow data for the selected period.</Text>
         </Surface>
       )}
+      </View>
     </ScrollView>
   );
 }

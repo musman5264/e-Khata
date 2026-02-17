@@ -44,9 +44,10 @@ export default function PaymentSummaryScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg }}>
         <Text variant="headlineSmall" style={{ fontWeight: '700' }}>{t('report.paymentReport')}</Text>
-        {data?.payments?.length > 0 && <ReportActions />}
+        {data?.payments?.length > 0 && <ReportActions reportTitle="Payment_Summary" />}
       </View>
 
+      <View nativeID="printable-report">
       <View style={styles.statsRow}>
         <Surface style={styles.statCard}>
           <Text style={styles.statLabel}>{t('payment.collect')}</Text>
@@ -117,6 +118,7 @@ export default function PaymentSummaryScreen() {
           </DataTable>
         </ScrollView>
       </Surface>
+      </View>
 
       {/* Payment Detail Modal */}
       <Portal>

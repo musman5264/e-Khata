@@ -303,10 +303,10 @@ class ReportController extends Controller
             'data' => [
                 'business' => [
                     'name' => $tenant->name,
-                    'address' => $tenant->getSetting('address', ''),
-                    'city' => $tenant->getSetting('city', ''),
-                    'phone' => $tenant->getSetting('phone', ''),
-                    'email' => $tenant->getSetting('email', ''),
+                    'address' => $tenant->address ?? '',
+                    'city' => $tenant->city ?? '',
+                    'phone' => $tenant->phone ?? '',
+                    'email' => $tenant->email ?? '',
                     'logo_url' => $tenant->logo_url,
                 ],
                 'party' => [
@@ -498,8 +498,8 @@ class ReportController extends Controller
             'data' => [
                 'business' => [
                     'name' => $tenant->name,
-                    'address' => $tenant->getSetting('address', ''),
-                    'phone' => $tenant->getSetting('phone', ''),
+                    'address' => $tenant->address ?? '',
+                    'phone' => $tenant->phone ?? '',
                 ],
                 'party' => [
                     'id' => $party->id,

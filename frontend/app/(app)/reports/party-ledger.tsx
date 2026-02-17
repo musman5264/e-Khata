@@ -63,11 +63,11 @@ export default function PartyLedgerScreen() {
           <MaterialCommunityIcons name="book-open-page-variant" size={28} color={colors.primary} />
           <Text variant="headlineSmall" style={styles.title}>Party Ledger</Text>
         </View>
-        {ledger.length > 0 && <ReportActions />}
+        {ledger.length > 0 && <ReportActions reportTitle="Party_Ledger" />}
       </View>
 
       {/* Party Selector + Date Range */}
-      <Surface style={styles.filterCard}>
+      <Surface style={styles.filterCard} nativeID="report-filter-card">
         <View style={[styles.filterGrid, isWide && { flexDirection: 'row' }]}>
           <View style={{ flex: isWide ? 2 : 1, minWidth: 200 }}>
             <Text variant="labelMedium" style={styles.filterLabel}>Select Party</Text>
@@ -116,7 +116,8 @@ export default function PartyLedgerScreen() {
 
       {/* Business & Party Info Cards — side by side 6x6 */}
       {party && (
-        <View style={[styles.infoCardsRow, !isWide && { flexDirection: 'column' }]}>
+        <View nativeID="printable-report">
+          <View style={[styles.infoCardsRow, !isWide && { flexDirection: 'column' }]}>
           {/* Business Info Card */}
           <Surface style={[styles.infoCard, isWide && { flex: 1 }]}>
             <View style={styles.infoCardHeader}>
@@ -180,14 +181,7 @@ export default function PartyLedgerScreen() {
               </View>
             </View>
           </Surface>
-        </View>
-      )}
-
-      {isLoading && (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      )}
+          </View>
 
       {/* Ledger Table */}
       {ledger.length > 0 && (
@@ -293,6 +287,14 @@ export default function PartyLedgerScreen() {
             </DataTable>
           </ScrollView>
         </Surface>
+      )}
+        </View>
+      )}
+
+      {isLoading && (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
       )}
 
       {!isLoading && selectedPartyId && ledger.length === 0 && (

@@ -28,9 +28,10 @@ export default function ReceivableAgingScreen() {
       {/* Header with actions */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.base }}>
         <Text variant="headlineSmall" style={{ fontWeight: '700' }}>Receivable Aging</Text>
-        {data?.parties?.length > 0 && <ReportActions />}
+        {data?.parties?.length > 0 && <ReportActions reportTitle="Receivable_Aging" />}
       </View>
 
+      <View nativeID="printable-report">
       <View style={styles.summaryRow}>
         <Surface style={[styles.summaryCard, { backgroundColor: '#FFEBEE' }]}>
           <Text style={styles.summaryLabel}>{t('report.receivableAging')}</Text>
@@ -70,6 +71,7 @@ export default function ReceivableAgingScreen() {
           )}
         </DataTable>
       </Surface>
+      </View>
     </ScrollView>
   );
 }

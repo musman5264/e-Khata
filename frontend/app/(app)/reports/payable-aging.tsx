@@ -28,9 +28,10 @@ export default function PayableAgingScreen() {
       {/* Header with actions */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.base }}>
         <Text variant="headlineSmall" style={{ fontWeight: '700' }}>Payable Aging</Text>
-        {data?.parties?.length > 0 && <ReportActions />}
+        {data?.parties?.length > 0 && <ReportActions reportTitle="Payable_Aging" />}
       </View>
 
+      <View nativeID="printable-report">
       <View style={styles.summaryRow}>
         <Surface style={[styles.summaryCard, { backgroundColor: '#E0F2F1' }]}>
           <Text style={styles.summaryLabel}>{t('report.payableAging')}</Text>
@@ -70,6 +71,7 @@ export default function PayableAgingScreen() {
           )}
         </DataTable>
       </Surface>
+      </View>
     </ScrollView>
   );
 }

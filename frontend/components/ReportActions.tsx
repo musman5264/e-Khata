@@ -6,8 +6,7 @@ import { colors } from '@/theme';
 
 /**
  * Inject a comprehensive @media print stylesheet once.
- * Uses aggressive selectors to hide sidebar, action buttons,
- * tab bars, and all non-report UI during print.
+ * ONLY prints the #printable-report area — hides everything else.
  */
 if (Platform.OS === 'web' && typeof document !== 'undefined') {
   const printStyleId = 'ekhata-print-styles';
@@ -16,48 +15,52 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
     style.id = printStyleId;
     style.textContent = `
       @media print {
-        /* Hide sidebar by nativeID (React Native Web renders nativeID as id) */
-        [id="web-sidebar"],
-        [id="report-actions"],
-        [id="impersonation-banner"],
-        [data-testid="web-sidebar"],
-        [data-print="no-print"],
-        [id="share-modal-overlay"] {
-          display: none !important;
-          width: 0 !important;
-          min-width: 0 !important;
-          max-width: 0 !important;
-          overflow: hidden !important;
+        /* Hide everything by default */
+        body * {
+          visibility: hidden !important;
         }
 
-        /* The root layout is flex row with sidebar first — force the sidebar to collapse */
-        #root > div > div:first-child {
-          display: none !important;
+        /* Show only the printable report area and its children */
+        [id="printable-report"],
+        [id="printable-report"] * {
+          visibility: visible !important;
         }
 
-        /* Make the content area full width */
-        #root > div > div {
-          flex: 1 !important;
+        /* Position the printable area at top-left */
+        [id="printable-report"] {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
           width: 100% !important;
           max-width: 100% !important;
+          padding: 0 !important;
+          margin: 0 !important;
         }
 
         /* Reset backgrounds for clean print */
-        body, html, #root, #root > div, #root > div > div {
+        body, html, #root {
           background: #fff !important;
           margin: 0 !important;
           padding: 0 !important;
         }
 
         /* Make everything visible (no scroll clipping) */
-        * {
+        [id="printable-report"] * {
           overflow: visible !important;
         }
 
-        /* Hide any fixed/absolute positioned navigation bars */
+        /* Explicit hide for known non-print elements */
+        [id="web-sidebar"],
+        [id="report-actions"],
+        [id="impersonation-banner"],
+        [id="share-modal-overlay"],
+        [id="export-modal-overlay"],
+        [id="report-filter-card"],
+        [data-print="no-print"],
         [role="navigation"],
         [role="tablist"] {
           display: none !important;
+          visibility: hidden !important;
         }
 
         /* Print-friendly adjustments */
@@ -94,6 +97,7 @@ export default function ReportActions({
 }: ReportActionsProps) {
   const [menuVisible, setMenuVisible] = React.useState(false);
   const [shareModalVisible, setShareModalVisible] = React.useState(false);
+  const [exportModalVisible, setExportModalVisible] = React.useState(false);
 
   const handlePrint = () => {
     if (onPrint) return onPrint();
@@ -121,7 +125,7 @@ export default function ReportActions({
           ignoreElements: (el: Element) => {
             const id = (el as HTMLElement).id || '';
             return id === 'report-actions' || id === 'web-sidebar' || id === 'impersonation-banner' ||
-              el.getAttribute('data-print') === 'no-print';
+              id === 'report-filter-card' || el.getAttribute('data-print') === 'no-print';
           },
         },
         jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
@@ -159,7 +163,7 @@ export default function ReportActions({
             ignoreElements: (el: Element) => {
               const id = (el as HTMLElement).id || '';
               return id === 'report-actions' || id === 'web-sidebar' || id === 'impersonation-banner' ||
-                el.getAttribute('data-print') === 'no-print';
+                id === 'report-filter-card' || el.getAttribute('data-print') === 'no-print';
             },
           },
           jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
@@ -170,6 +174,122 @@ export default function ReportActions({
         console.error('PDF export error:', err);
         handlePrint();
       }
+    }
+  };
+
+  /** Export as CSV — extracts table data from the printable report area */
+  const handleExportCSV = () => {
+    if (Platform.OS !== 'web') return;
+    try {
+      const element = findReportElement(contentSelector);
+      if (!element) {
+        alert('Could not find report content to export.');
+        return;
+      }
+
+      const tables = element.querySelectorAll('div[role="table"], table');
+      if (tables.length === 0) {
+        alert('No table data found to export as CSV.');
+        return;
+      }
+
+      let csvContent = '';
+      tables.forEach((table) => {
+        const rows = table.querySelectorAll('div[role="row"], tr');
+        rows.forEach((row) => {
+          const cells = row.querySelectorAll('div[role="columnheader"], div[role="cell"], th, td');
+          const rowData: string[] = [];
+          cells.forEach((cell) => {
+            let text = (cell as HTMLElement).innerText || cell.textContent || '';
+            text = text.replace(/[\n\r]+/g, ' ').trim();
+            // Escape CSV: wrap in quotes if has commas/quotes
+            if (text.includes(',') || text.includes('"')) {
+              text = `"${text.replace(/"/g, '""')}"`;
+            }
+            rowData.push(text);
+          });
+          csvContent += rowData.join(',') + '\n';
+        });
+        csvContent += '\n';
+      });
+
+      const title = reportTitle || 'Report';
+      const filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('CSV export error:', err);
+      alert('Failed to export CSV.');
+    }
+  };
+
+  /** Export as XLSX (using CSV approach with .xlsx content type) */
+  const handleExportXLSX = () => {
+    if (Platform.OS !== 'web') return;
+    try {
+      const element = findReportElement(contentSelector);
+      if (!element) {
+        alert('Could not find report content to export.');
+        return;
+      }
+
+      const tables = element.querySelectorAll('div[role="table"], table');
+      if (tables.length === 0) {
+        alert('No table data found to export.');
+        return;
+      }
+
+      // Build a simple HTML table for Excel to parse
+      let htmlContent = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Report</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>';
+      tables.forEach((table) => {
+        htmlContent += '<table border="1">';
+        const rows = table.querySelectorAll('div[role="row"], tr');
+        rows.forEach((row) => {
+          htmlContent += '<tr>';
+          const isHeader = row.querySelector('div[role="columnheader"], th');
+          const cells = row.querySelectorAll('div[role="columnheader"], div[role="cell"], th, td');
+          cells.forEach((cell) => {
+            const tag = isHeader ? 'th' : 'td';
+            let text = (cell as HTMLElement).innerText || cell.textContent || '';
+            text = text.replace(/[\n\r]+/g, ' ').trim();
+            htmlContent += `<${tag}>${text}</${tag}>`;
+          });
+          htmlContent += '</tr>';
+        });
+        htmlContent += '</table>';
+      });
+      htmlContent += '</body></html>';
+
+      const title = reportTitle || 'Report';
+      const filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xls`;
+      const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('XLSX export error:', err);
+      alert('Failed to export Excel file.');
+    }
+  };
+
+  const handleExport = () => {
+    setExportModalVisible(true);
+  };
+
+  const handleExportFormat = (format: 'pdf' | 'csv' | 'xlsx') => {
+    setExportModalVisible(false);
+    switch (format) {
+      case 'pdf': handleExportPDF(); break;
+      case 'csv': handleExportCSV(); break;
+      case 'xlsx': handleExportXLSX(); break;
     }
   };
 
@@ -208,16 +328,51 @@ export default function ReportActions({
     }
 
     if (channel === 'whatsapp') {
-      const text = `${reportTitle || 'Report'}: ${window.location.href}`;
-      const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-      window.open(url, '_blank');
+      try {
+        const blob = await generatePDFBlob();
+        const title = reportTitle || 'Report';
+        if (blob && navigator.share && navigator.canShare) {
+          const file = new File([blob], `${title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`, { type: 'application/pdf' });
+          const shareData = { title, text: title, files: [file] };
+          if (navigator.canShare(shareData)) {
+            await navigator.share(shareData);
+            return;
+          }
+        }
+        // Fallback: share link via WhatsApp
+        const text = `${title}: ${window.location.href}`;
+        const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank');
+      } catch (err) {
+        console.error('WhatsApp share error:', err);
+        const text = `${reportTitle || 'Report'}: ${window.location.href}`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+      }
       return;
     }
 
     if (channel === 'email') {
-      const subject = encodeURIComponent(reportTitle || 'Report');
-      const body = encodeURIComponent(`Please find the report here: ${window.location.href}`);
-      window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+      try {
+        const blob = await generatePDFBlob();
+        const title = reportTitle || 'Report';
+        if (blob && navigator.share && navigator.canShare) {
+          const file = new File([blob], `${title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`, { type: 'application/pdf' });
+          const shareData = { title, files: [file] };
+          if (navigator.canShare(shareData)) {
+            await navigator.share(shareData);
+            return;
+          }
+        }
+        // Fallback: mailto link
+        const subject = encodeURIComponent(title);
+        const body = encodeURIComponent(`Please find the report here: ${window.location.href}`);
+        window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+      } catch (err) {
+        console.error('Email share error:', err);
+        const subject = encodeURIComponent(reportTitle || 'Report');
+        const body = encodeURIComponent(`Please find the report here: ${window.location.href}`);
+        window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+      }
       return;
     }
   };
@@ -226,6 +381,56 @@ export default function ReportActions({
     if (onShare) return onShare();
     setShareModalVisible(true);
   };
+
+  /** Export format picker modal */
+  const exportModal = Platform.OS === 'web' && exportModalVisible ? (
+    <Portal>
+      <View style={shareStyles.overlay} nativeID="export-modal-overlay">
+        <TouchableOpacity style={shareStyles.backdrop} onPress={() => setExportModalVisible(false)} activeOpacity={1} />
+        <Surface style={shareStyles.modal}>
+          <Text style={shareStyles.modalTitle}>Export Report</Text>
+          <Text style={shareStyles.modalSubtitle}>Choose export format</Text>
+          <Divider style={{ marginVertical: 12 }} />
+
+          <TouchableOpacity style={shareStyles.channelRow} onPress={() => handleExportFormat('pdf')}>
+            <View style={[shareStyles.channelIcon, { backgroundColor: '#EF444415' }]}>
+              <MaterialCommunityIcons name="file-pdf-box" size={22} color="#EF4444" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={shareStyles.channelLabel}>PDF</Text>
+              <Text style={shareStyles.channelDesc}>Export as PDF document</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={20} color="#ccc" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={shareStyles.channelRow} onPress={() => handleExportFormat('csv')}>
+            <View style={[shareStyles.channelIcon, { backgroundColor: '#22C55E15' }]}>
+              <MaterialCommunityIcons name="file-delimited-outline" size={22} color="#22C55E" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={shareStyles.channelLabel}>CSV</Text>
+              <Text style={shareStyles.channelDesc}>Export as comma-separated values</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={20} color="#ccc" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={shareStyles.channelRow} onPress={() => handleExportFormat('xlsx')}>
+            <View style={[shareStyles.channelIcon, { backgroundColor: '#3B82F615' }]}>
+              <MaterialCommunityIcons name="file-excel-box" size={22} color="#3B82F6" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={shareStyles.channelLabel}>Excel (XLS)</Text>
+              <Text style={shareStyles.channelDesc}>Export as Excel spreadsheet</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={20} color="#ccc" />
+          </TouchableOpacity>
+
+          <Divider style={{ marginTop: 8 }} />
+          <Button mode="text" onPress={() => setExportModalVisible(false)} style={{ marginTop: 4 }}>Cancel</Button>
+        </Surface>
+      </View>
+    </Portal>
+  ) : null;
 
   const shareModal = Platform.OS === 'web' && shareModalVisible ? (
     <Portal>
@@ -242,7 +447,7 @@ export default function ReportActions({
             </View>
             <View style={{ flex: 1 }}>
               <Text style={shareStyles.channelLabel}>WhatsApp</Text>
-              <Text style={shareStyles.channelDesc}>Share link via WhatsApp</Text>
+              <Text style={shareStyles.channelDesc}>Share PDF via WhatsApp</Text>
             </View>
             <MaterialCommunityIcons name="chevron-right" size={20} color="#ccc" />
           </TouchableOpacity>
@@ -253,7 +458,7 @@ export default function ReportActions({
             </View>
             <View style={{ flex: 1 }}>
               <Text style={shareStyles.channelLabel}>Email</Text>
-              <Text style={shareStyles.channelDesc}>Share via email with report link</Text>
+              <Text style={shareStyles.channelDesc}>Share PDF via email</Text>
             </View>
             <MaterialCommunityIcons name="chevron-right" size={20} color="#ccc" />
           </TouchableOpacity>
@@ -307,17 +512,10 @@ export default function ReportActions({
             leadingIcon="printer"
           />
           <Menu.Item
-            onPress={() => { setMenuVisible(false); handleExportPDF(); }}
-            title="Export PDF"
-            leadingIcon="file-pdf-box"
+            onPress={() => { setMenuVisible(false); handleExport(); }}
+            title="Export"
+            leadingIcon="download"
           />
-          {onExportExcel && (
-            <Menu.Item
-              onPress={() => { setMenuVisible(false); onExportExcel(); }}
-              title="Export Excel"
-              leadingIcon="file-excel-box"
-            />
-          )}
           <Divider />
           <Menu.Item
             onPress={() => { setMenuVisible(false); handleShare(); }}
@@ -326,6 +524,7 @@ export default function ReportActions({
           />
         </Menu>
         {shareModal}
+        {exportModal}
       </View>
     );
   }
@@ -344,26 +543,14 @@ export default function ReportActions({
       </Button>
       <Button
         mode="outlined"
-        icon="file-pdf-box"
-        onPress={handleExportPDF}
+        icon="download"
+        onPress={handleExport}
         compact
         style={styles.btn}
         labelStyle={styles.btnLabel}
       >
-        PDF
+        Export
       </Button>
-      {onExportExcel && (
-        <Button
-          mode="outlined"
-          icon="file-excel-box"
-          onPress={onExportExcel}
-          compact
-          style={styles.btn}
-          labelStyle={styles.btnLabel}
-        >
-          Excel
-        </Button>
-      )}
       <Button
         mode="outlined"
         icon="share-variant"
@@ -375,34 +562,36 @@ export default function ReportActions({
         Share
       </Button>
       {shareModal}
+      {exportModal}
     </View>
   );
 }
 
 /**
  * Find the report content element in the DOM for PDF export.
- * Strategy: Look for known markers, then walk the DOM to find the
- * scrollable content area that contains the report tables/cards.
+ * Priority: #printable-report → contentSelector → main content area → body
  */
 function findReportElement(contentSelector?: string): HTMLElement | null {
   if (typeof document === 'undefined') return null;
 
-  // 1. Try the explicit selector if provided
+  // 1. Always prefer the standardized printable-report element
+  const printable = document.getElementById('printable-report');
+  if (printable) return printable;
+
+  // 2. Try the explicit selector if provided
   if (contentSelector) {
     const el = document.querySelector(contentSelector) as HTMLElement;
     if (el) return el;
   }
 
-  // 2. Find the main content area (right side of the flex-row layout)
+  // 3. Find the main content area (right side of the flex-row layout)
   const rootDiv = document.getElementById('root');
   if (rootDiv) {
     const flexRow = rootDiv.firstElementChild as HTMLElement;
     if (flexRow && flexRow.children.length >= 2) {
-      // Content area is the second child (after sidebar)
       const contentArea = flexRow.children[1] as HTMLElement;
       if (contentArea) return contentArea;
     }
-    // Fallback: if no flex row (mobile layout), return first child
     if (flexRow) return flexRow;
   }
 
