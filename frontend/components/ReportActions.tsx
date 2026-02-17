@@ -26,14 +26,18 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
           display: block !important;
           position: static !important;
           width: 100% !important;
+          max-width: 100% !important;
           background: #fff !important;
-          padding: 8mm !important;
+          padding: 0 !important;
           margin: 0 !important;
+          box-sizing: border-box !important;
+          overflow: visible !important;
         }
 
         body > #ekhata-print-container * {
           visibility: visible !important;
           overflow: visible !important;
+          box-sizing: border-box !important;
         }
 
         /* Force table rows to stay together */
@@ -41,6 +45,7 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
         body > #ekhata-print-container div[role="table"] {
           page-break-inside: auto !important;
           width: 100% !important;
+          table-layout: fixed !important;
         }
 
         body > #ekhata-print-container tr,
@@ -58,6 +63,34 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
           overflow: visible !important;
         }
 
+        /* Shrink font sizes for print */
+        body > #ekhata-print-container div[role="cell"],
+        body > #ekhata-print-container div[role="columnheader"] {
+          font-size: 10px !important;
+          padding: 4px 2px !important;
+        }
+
+        /* Ensure all surfaces lay flat */
+        body > #ekhata-print-container [class*="Surface"],
+        body > #ekhata-print-container [style*="elevation"] {
+          box-shadow: none !important;
+          border: 1px solid #eee !important;
+        }
+
+        /* Print footer */
+        .ekhata-print-footer {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          padding: 4mm 6mm;
+          border-top: 1px solid #ccc;
+          font-size: 9px;
+          color: #666;
+          text-align: center;
+          background: #fff;
+        }
+
         /* Reset backgrounds for clean print */
         body, html {
           background: #fff !important;
@@ -66,7 +99,7 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
         }
 
         @page {
-          margin: 8mm;
+          margin: 6mm 5mm 14mm 5mm;
           size: A4 portrait;
         }
       }
@@ -80,6 +113,15 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
   }
 }
 
+export interface BusinessInfo {
+  name: string;
+  address?: string;
+  city?: string;
+  phone?: string;
+  email?: string;
+  logo_url?: string;
+}
+
 interface ReportActionsProps {
   onPrint?: () => void;
   onExportPDF?: () => void;
@@ -90,6 +132,8 @@ interface ReportActionsProps {
   contentSelector?: string;
   /** Report title for PDF filename */
   reportTitle?: string;
+  /** Business info for header/footer branding */
+  businessInfo?: BusinessInfo | null;
 }
 
 export default function ReportActions({
@@ -100,10 +144,39 @@ export default function ReportActions({
   compact = false,
   contentSelector,
   reportTitle,
+  businessInfo,
 }: ReportActionsProps) {
   const [menuVisible, setMenuVisible] = React.useState(false);
   const [shareModalVisible, setShareModalVisible] = React.useState(false);
   const [exportModalVisible, setExportModalVisible] = React.useState(false);
+
+  /** Build a branded HTML header string */
+  const buildHeaderHTML = (title?: string): string => {
+    const biz = businessInfo;
+    const bizName = biz?.name || 'e-Khata';
+    const bizAddress = [biz?.address, biz?.city].filter(Boolean).join(', ');
+    const bizPhone = biz?.phone || '';
+    const bizEmail = biz?.email || '';
+    const reportDate = new Date().toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' });
+    const displayTitle = title ? title.replace(/_/g, ' ') : '';
+
+    let html = '<div style="text-align:center;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #1B2B65;">';
+    html += `<h1 style="margin:0;font-size:20px;font-weight:800;color:#1B2B65;">${bizName}</h1>`;
+    if (bizAddress) html += `<p style="margin:2px 0 0;font-size:10px;color:#666;">${bizAddress}</p>`;
+    if (bizPhone || bizEmail) html += `<p style="margin:1px 0 0;font-size:10px;color:#666;">${[bizPhone, bizEmail].filter(Boolean).join(' | ')}</p>`;
+    if (displayTitle) html += `<h3 style="margin:8px 0 0;font-size:14px;font-weight:700;color:#333;">${displayTitle}</h3>`;
+    html += `<p style="margin:2px 0 0;font-size:9px;color:#888;">Generated: ${reportDate}</p>`;
+    html += '</div>';
+    return html;
+  };
+
+  /** Build a branded HTML footer string */
+  const buildFooterHTML = (): string => {
+    const bizName = businessInfo?.name || 'e-Khata';
+    return `<div class="ekhata-print-footer" style="text-align:center;padding:6px 0;border-top:1px solid #ccc;margin-top:16px;font-size:9px;color:#666;">
+      ${bizName} &copy; <a href="https://esystematics.com" style="color:#1B2B65;text-decoration:none;">Esystematic Technologies</a> | 0311-3999345 | 0334-5266444
+    </div>`;
+  };
 
   const handlePrint = () => {
     if (onPrint) return onPrint();
@@ -122,15 +195,12 @@ export default function ReportActions({
       // Create print container with FRESH cloned content
       const container = document.createElement('div');
       container.id = 'ekhata-print-container';
+      container.style.cssText = 'width:100%;max-width:100%;padding:4mm 5mm;box-sizing:border-box;';
 
-      // Add a print header with report title
-      if (reportTitle) {
-        const header = document.createElement('div');
-        header.style.cssText = 'text-align:center;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #333;';
-        header.innerHTML = `<h2 style="margin:0;font-size:18px;font-weight:700;">${reportTitle.replace(/_/g, ' ')}</h2>
-          <p style="margin:4px 0 0;font-size:11px;color:#666;">Generated: ${new Date().toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' })}</p>`;
-        container.appendChild(header);
-      }
+      // Add business header
+      const header = document.createElement('div');
+      header.innerHTML = buildHeaderHTML(reportTitle);
+      container.appendChild(header);
 
       // Clone and clean the content
       const clone = source.cloneNode(true) as HTMLElement;
@@ -138,6 +208,7 @@ export default function ReportActions({
       clone.style.width = '100%';
       clone.style.maxWidth = '100%';
       clone.style.overflow = 'visible';
+      clone.style.boxSizing = 'border-box';
       // Remove horizontal scroll wrappers
       const scrollWrappers = clone.querySelectorAll('[style*="overflow"]');
       scrollWrappers.forEach((el) => {
@@ -148,8 +219,22 @@ export default function ReportActions({
       minWidthEls.forEach((el) => {
         (el as HTMLElement).style.minWidth = 'unset';
       });
+      // Force all flex children to not shrink beyond container
+      const allEls = clone.querySelectorAll('*');
+      allEls.forEach((el) => {
+        const htmlEl = el as HTMLElement;
+        if (htmlEl.style.minWidth && htmlEl.style.minWidth !== 'unset') {
+          htmlEl.style.minWidth = 'unset';
+        }
+      });
 
       container.appendChild(clone);
+
+      // Add footer
+      const footer = document.createElement('div');
+      footer.innerHTML = buildFooterHTML();
+      container.appendChild(footer);
+
       document.body.appendChild(container);
 
       // Print, then clean up immediately after
@@ -170,9 +255,17 @@ export default function ReportActions({
       const element = findReportElement(contentSelector);
       if (!element) return null;
 
+      // Wrap with header/footer for PDF
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = buildHeaderHTML(reportTitle);
+      wrapper.appendChild(element);
+      const footerDiv = document.createElement('div');
+      footerDiv.innerHTML = buildFooterHTML();
+      wrapper.appendChild(footerDiv);
+
       const title = reportTitle || document.title || 'Report';
       const opt = {
-        margin: [10, 10, 10, 10] as [number, number, number, number],
+        margin: [8, 6, 12, 6] as [number, number, number, number],
         filename: `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: {
@@ -188,7 +281,7 @@ export default function ReportActions({
         jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
       };
 
-      return await html2pdf().set(opt).from(element).outputPdf('blob');
+      return await html2pdf().set(opt).from(wrapper).outputPdf('blob');
     } catch (err) {
       console.error('PDF generation error:', err);
       return null;
@@ -206,11 +299,19 @@ export default function ReportActions({
           return;
         }
 
+        // Wrap with header/footer for PDF
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = buildHeaderHTML(reportTitle);
+        wrapper.appendChild(element);
+        const footerDiv = document.createElement('div');
+        footerDiv.innerHTML = buildFooterHTML();
+        wrapper.appendChild(footerDiv);
+
         const title = reportTitle || document.title || 'Report';
         const filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
 
         const opt = {
-          margin: [10, 10, 10, 10] as [number, number, number, number],
+          margin: [8, 6, 12, 6] as [number, number, number, number],
           filename,
           image: { type: 'jpeg' as const, quality: 0.98 },
           html2canvas: {
@@ -226,7 +327,7 @@ export default function ReportActions({
           jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
         };
 
-        await html2pdf().set(opt).from(element).save();
+        await html2pdf().set(opt).from(wrapper).save();
       } catch (err) {
         console.error('PDF export error:', err);
         handlePrint();

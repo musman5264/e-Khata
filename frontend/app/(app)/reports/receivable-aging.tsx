@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Surface, DataTable, ActivityIndicator } from 'react-native-paper';
+import { Text, Surface, DataTable, ActivityIndicator, TextInput, Chip } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
@@ -9,11 +9,28 @@ import { formatCurrency, formatCurrencyUrdu } from '@/utils/formatCurrency';
 import { formatDate } from '@/utils/formatDate';
 import ReportActions from '@/components/ReportActions';
 import DateInput from '@/components/DateInput';
+import SortableHeader, { toggleSort, sortData, type SortOrder } from '@/components/SortableHeader';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 export default function ReceivableAgingScreen() {
   const { t } = useTranslation();
+  const businessInfo = useCurrentBusiness();
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+
+  // Filters
+  const [searchName, setSearchName] = useState('');
+  const [minBalance, setMinBalance] = useState('');
+
+  // Sort
+  const [sortBy, setSortBy] = useState('balance');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
+  const handleSort = (key: string) => {
+    const result = toggleSort(sortBy, sortOrder, key);
+    setSortBy(result.sortBy);
+    setSortOrder(result.sortOrder);
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ['receivable-aging', dateFrom, dateTo],
@@ -26,6 +43,19 @@ export default function ReceivableAgingScreen() {
     },
   });
 
+  const filteredParties = useMemo(() => {
+    let parties = data?.parties || [];
+    if (searchName) {
+      const q = searchName.toLowerCase();
+      parties = parties.filter((p: any) => p.name?.toLowerCase().includes(q) || p.mobile?.includes(searchName));
+    }
+    if (minBalance) {
+      const min = parseFloat(minBalance);
+      if (!isNaN(min)) parties = parties.filter((p: any) => p.balance >= min);
+    }
+    return sortData(parties, sortBy, sortOrder);
+  }, [data?.parties, searchName, minBalance, sortBy, sortOrder]);
+
   if (isLoading) {
     return <View style={styles.centered}><ActivityIndicator size="large" color={colors.primary} /></View>;
   }
@@ -35,10 +65,10 @@ export default function ReceivableAgingScreen() {
       {/* Header with actions */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.base }}>
         <Text variant="headlineSmall" style={{ fontWeight: '700' }}>Receivable Aging</Text>
-        {data?.parties?.length > 0 && <ReportActions reportTitle="Receivable_Aging" />}
+        {filteredParties.length > 0 && <ReportActions reportTitle="Receivable_Aging" businessInfo={businessInfo} />}
       </View>
 
-      {/* Date Filters */}
+      {/* Filters */}
       <Surface style={styles.filterCard} nativeID="report-filter-card">
         <View style={styles.filterRow}>
           <View style={{ flex: 1, minWidth: 130 }}>
@@ -46,6 +76,31 @@ export default function ReceivableAgingScreen() {
           </View>
           <View style={{ flex: 1, minWidth: 130 }}>
             <DateInput label="To Date" value={dateTo} onChangeText={setDateTo} />
+          </View>
+        </View>
+        <View style={[styles.filterRow, { marginTop: 10 }]}>
+          <View style={{ flex: 2, minWidth: 160 }}>
+            <TextInput
+              label="Search Party / Mobile"
+              value={searchName}
+              onChangeText={setSearchName}
+              mode="outlined"
+              dense
+              left={<TextInput.Icon icon="magnify" />}
+              style={{ backgroundColor: '#fff', fontSize: 13 }}
+            />
+          </View>
+          <View style={{ flex: 1, minWidth: 100 }}>
+            <TextInput
+              label="Min Balance"
+              value={minBalance}
+              onChangeText={setMinBalance}
+              mode="outlined"
+              dense
+              keyboardType="numeric"
+              left={<TextInput.Icon icon="currency-inr" />}
+              style={{ backgroundColor: '#fff', fontSize: 13 }}
+            />
           </View>
         </View>
       </Surface>
@@ -58,20 +113,20 @@ export default function ReceivableAgingScreen() {
             {formatCurrency(data?.total ?? 0)}
           </Text>
           <Text style={styles.urduAmt}>{formatCurrencyUrdu(data?.total ?? 0)}</Text>
-          <Text style={styles.summaryCount}>{data?.count ?? 0} {t('dashboard.parties')}</Text>
+          <Text style={styles.summaryCount}>{filteredParties.length} {t('dashboard.parties')}</Text>
         </Surface>
       </View>
 
       <Surface style={styles.tableCard}>
         <DataTable>
           <DataTable.Header>
-            <DataTable.Title>{t('party.name')}</DataTable.Title>
-            <DataTable.Title>{t('party.mobile')}</DataTable.Title>
-            <DataTable.Title numeric>{t('party.balance')}</DataTable.Title>
-            <DataTable.Title numeric>{t('session.lastActive')}</DataTable.Title>
+            <SortableHeader label={t('party.name')} sortKey="name" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} />
+            <SortableHeader label={t('party.mobile')} sortKey="mobile" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} />
+            <SortableHeader label={t('party.balance')} sortKey="balance" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} numeric />
+            <SortableHeader label={t('session.lastActive')} sortKey="last_txn_date" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} numeric />
           </DataTable.Header>
 
-          {data?.parties?.map((party: any) => (
+          {filteredParties.map((party: any) => (
             <DataTable.Row key={party.id}>
               <DataTable.Cell>{party.name}</DataTable.Cell>
               <DataTable.Cell>{party.mobile || '—'}</DataTable.Cell>
@@ -84,7 +139,7 @@ export default function ReceivableAgingScreen() {
             </DataTable.Row>
           ))}
 
-          {(!data?.parties || data.parties.length === 0) && (
+          {filteredParties.length === 0 && (
             <DataTable.Row>
               <DataTable.Cell><Text style={{ color: colors.textHint }}>{t('common.noData')}</Text></DataTable.Cell>
             </DataTable.Row>

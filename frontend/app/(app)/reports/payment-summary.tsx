@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, useWindowDimensions } from 'react-native';
-import { Text, Surface, DataTable, ActivityIndicator, Chip, Modal, Portal, IconButton, Divider } from 'react-native-paper';
+import { Text, Surface, DataTable, ActivityIndicator, Chip, Modal, Portal, IconButton, Divider, TextInput } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
@@ -9,15 +9,34 @@ import { formatCurrency, formatCurrencyUrdu } from '@/utils/formatCurrency';
 import { formatDate, formatDateTime } from '@/utils/formatDate';
 import ReportActions from '@/components/ReportActions';
 import DateInput from '@/components/DateInput';
+import SortableHeader, { toggleSort, sortData, type SortOrder } from '@/components/SortableHeader';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 export default function PaymentSummaryScreen() {
   const { t } = useTranslation();
+  const businessInfo = useCurrentBusiness();
   const { width } = useWindowDimensions();
   const isWide = width > 700;
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+
+  // Filters
+  const [filterType, setFilterType] = useState<'all' | 'collect' | 'send'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending' | 'failed'>('all');
+  const [filterGateway, setFilterGateway] = useState<string>('all');
+  const [searchText, setSearchText] = useState('');
+
+  // Sort
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
+  const handleSort = (key: string) => {
+    const result = toggleSort(sortBy, sortOrder, key);
+    setSortBy(result.sortBy);
+    setSortOrder(result.sortOrder);
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ['payment-summary', dateFrom, dateTo],
@@ -29,6 +48,28 @@ export default function PaymentSummaryScreen() {
       return res.data.data;
     },
   });
+
+  // Available gateways from data
+  const gateways = useMemo(() => {
+    const set = new Set<string>();
+    (data?.payments || []).forEach((p: any) => { if (p.gateway) set.add(p.gateway); });
+    return Array.from(set);
+  }, [data?.payments]);
+
+  // Apply filters + sort
+  const filteredPayments = useMemo(() => {
+    let payments = data?.payments || [];
+    if (filterType !== 'all') payments = payments.filter((p: any) => p.type === filterType);
+    if (filterStatus !== 'all') payments = payments.filter((p: any) => p.status === filterStatus);
+    if (filterGateway !== 'all') payments = payments.filter((p: any) => p.gateway === filterGateway);
+    if (searchText) {
+      const q = searchText.toLowerCase();
+      payments = payments.filter((p: any) =>
+        p.party_name?.toLowerCase().includes(q) || p.gateway?.toLowerCase().includes(q)
+      );
+    }
+    return sortData(payments, sortBy, sortOrder);
+  }, [data?.payments, filterType, filterStatus, filterGateway, searchText, sortBy, sortOrder]);
 
   if (isLoading) {
     return <View style={styles.centered}><ActivityIndicator size="large" color={colors.primary} /></View>;
@@ -52,10 +93,10 @@ export default function PaymentSummaryScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg }}>
         <Text variant="headlineSmall" style={{ fontWeight: '700' }}>{t('report.paymentReport')}</Text>
-        {data?.payments?.length > 0 && <ReportActions reportTitle="Payment_Summary" />}
+        {filteredPayments.length > 0 && <ReportActions reportTitle="Payment_Summary" businessInfo={businessInfo} />}
       </View>
 
-      {/* Date Filters */}
+      {/* Date Filters + Additional Filters */}
       <Surface style={styles.filterCard} nativeID="report-filter-card">
         <View style={styles.filterRow}>
           <View style={{ flex: 1, minWidth: 130 }}>
@@ -64,6 +105,52 @@ export default function PaymentSummaryScreen() {
           <View style={{ flex: 1, minWidth: 130 }}>
             <DateInput label="To Date" value={dateTo} onChangeText={setDateTo} />
           </View>
+          <View style={{ flex: 1.5, minWidth: 160 }}>
+            <TextInput
+              label="Search..."
+              value={searchText}
+              onChangeText={setSearchText}
+              mode="outlined"
+              dense
+              left={<TextInput.Icon icon="magnify" />}
+              style={{ backgroundColor: '#fff', fontSize: 13 }}
+            />
+          </View>
+        </View>
+        <View style={[styles.filterRow, { marginTop: 8, flexWrap: 'wrap' }]}>
+          <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSecondary }}>Type:</Text>
+            {(['all', 'collect', 'send'] as const).map((v) => (
+              <Chip key={v} selected={filterType === v} onPress={() => setFilterType(v)} compact
+                style={{ backgroundColor: filterType === v ? '#E8F5E9' : '#f5f5f5' }}
+                textStyle={{ fontSize: 10, fontWeight: '600' }}>
+                {v === 'all' ? 'All' : v === 'collect' ? 'Collect' : 'Send'}
+              </Chip>
+            ))}
+          </View>
+          <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSecondary }}>Status:</Text>
+            {(['all', 'completed', 'pending', 'failed'] as const).map((v) => (
+              <Chip key={v} selected={filterStatus === v} onPress={() => setFilterStatus(v)} compact
+                style={{ backgroundColor: filterStatus === v ? '#E3F2FD' : '#f5f5f5' }}
+                textStyle={{ fontSize: 10, fontWeight: '600' }}>
+                {v.charAt(0).toUpperCase() + v.slice(1)}
+              </Chip>
+            ))}
+          </View>
+          {gateways.length > 0 && (
+            <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+              <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSecondary }}>Gateway:</Text>
+              <Chip selected={filterGateway === 'all'} onPress={() => setFilterGateway('all')} compact
+                style={{ backgroundColor: filterGateway === 'all' ? '#FFF3E0' : '#f5f5f5' }}
+                textStyle={{ fontSize: 10, fontWeight: '600' }}>All</Chip>
+              {gateways.map((g) => (
+                <Chip key={g} selected={filterGateway === g} onPress={() => setFilterGateway(g)} compact
+                  style={{ backgroundColor: filterGateway === g ? '#FFF3E0' : '#f5f5f5' }}
+                  textStyle={{ fontSize: 10, fontWeight: '600', textTransform: 'capitalize' }}>{g}</Chip>
+              ))}
+            </View>
+          )}
         </View>
       </Surface>
 
@@ -98,14 +185,14 @@ export default function PaymentSummaryScreen() {
         <ScrollView horizontal={!isWide} showsHorizontalScrollIndicator={false}>
           <DataTable style={{ minWidth: isWide ? undefined : 650 }}>
             <DataTable.Header style={styles.tableHeader}>
-              <DataTable.Title style={{ flex: 1.3 }}><Text style={styles.thText}>{t('common.type')}</Text></DataTable.Title>
-              <DataTable.Title style={{ flex: 1.2 }}><Text style={styles.thText}>{t('payment.gateway')}</Text></DataTable.Title>
-              <DataTable.Title numeric style={{ flex: 1.5 }}><Text style={styles.thText}>{t('common.amount')}</Text></DataTable.Title>
-              <DataTable.Title style={{ flex: 1 }}><Text style={styles.thText}>{t('common.status')}</Text></DataTable.Title>
-              <DataTable.Title style={{ flex: 1.2 }}><Text style={styles.thText}>{t('common.date')}</Text></DataTable.Title>
+              <SortableHeader label={t('common.type')} sortKey="type" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} style={{ flex: 1.3 }} />
+              <SortableHeader label={t('payment.gateway')} sortKey="gateway" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} style={{ flex: 1.2 }} />
+              <SortableHeader label={t('common.amount')} sortKey="amount" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} numeric style={{ flex: 1.5 }} />
+              <SortableHeader label={t('common.status')} sortKey="status" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} style={{ flex: 1 }} />
+              <SortableHeader label={t('common.date')} sortKey="created_at" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} style={{ flex: 1.2 }} />
             </DataTable.Header>
 
-            {data?.payments?.map((p: any) => (
+            {filteredPayments.map((p: any) => (
               <DataTable.Row key={p.id} onPress={() => openDetail(p)} style={styles.tableRow}>
                 <DataTable.Cell style={{ flex: 1.3 }}>
                   <View style={[styles.typeBadge, {

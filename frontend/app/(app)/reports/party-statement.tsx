@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
-import { Text, Surface, ActivityIndicator, Button, DataTable, Divider, Chip } from 'react-native-paper';
+import { Text, Surface, ActivityIndicator, Button, DataTable, Divider, Chip, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
@@ -9,10 +9,13 @@ import { colors, spacing } from '@/theme';
 import SearchableDropdown from '@/components/SearchableDropdown';
 import ReportActions from '@/components/ReportActions';
 import DateInput from '@/components/DateInput';
+import SortableHeader, { toggleSort, sortData, type SortOrder } from '@/components/SortableHeader';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { formatDate } from '@/utils/formatDate';
 
 export default function PartyStatementScreen() {
   const params = useLocalSearchParams<{ partyId?: string }>();
+  const businessInfo = useCurrentBusiness();
   const { width } = useWindowDimensions();
   const isWide = width > 700;
 
@@ -21,6 +24,20 @@ export default function PartyStatementScreen() {
   );
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+
+  // Filters
+  const [searchDesc, setSearchDesc] = useState('');
+  const [txnType, setTxnType] = useState<'all' | 'debit' | 'credit'>('all');
+
+  // Sort
+  const [sortBy, setSortBy] = useState('');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+
+  const handleSort = (key: string) => {
+    const result = toggleSort(sortBy, sortOrder, key);
+    setSortBy(result.sortBy);
+    setSortOrder(result.sortOrder);
+  };
 
   // Fetch parties
   const { data: partiesData } = useQuery({
@@ -53,6 +70,19 @@ export default function PartyStatementScreen() {
   const formatAmount = (val: number) =>
     val ? `Rs ${val.toLocaleString('en-PK', { minimumFractionDigits: 2 })}` : '-';
 
+  // Apply filters + sort
+  const filteredEntries = useMemo(() => {
+    let items = entries;
+    if (searchDesc) {
+      const q = searchDesc.toLowerCase();
+      items = items.filter((e: any) => e.description?.toLowerCase().includes(q) || e.reference?.toLowerCase().includes(q));
+    }
+    if (txnType === 'debit') items = items.filter((e: any) => e.debit > 0);
+    if (txnType === 'credit') items = items.filter((e: any) => e.credit > 0);
+    if (sortBy) return sortData(items, sortBy, sortOrder);
+    return items;
+  }, [entries, searchDesc, txnType, sortBy, sortOrder]);
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header */}
@@ -61,7 +91,7 @@ export default function PartyStatementScreen() {
           <MaterialCommunityIcons name="file-document-outline" size={28} color="#E84393" />
           <Text variant="headlineSmall" style={styles.title}>Party Statement</Text>
         </View>
-        {entries.length > 0 && <ReportActions reportTitle="Party_Statement" />}
+        {entries.length > 0 && <ReportActions reportTitle="Party_Statement" businessInfo={businessInfo} />}
       </View>
 
       {/* Filters */}
@@ -72,7 +102,7 @@ export default function PartyStatementScreen() {
             <SearchableDropdown
               options={partiesData || []}
               selectedValue={selectedPartyId}
-              onSelect={(v) => setSelectedPartyId(v)}
+              onSelect={(v: any) => setSelectedPartyId(v)}
               placeholder="Choose a party..."
             />
           </View>
@@ -88,6 +118,36 @@ export default function PartyStatementScreen() {
             </Button>
           </View>
         </View>
+        {/* Additional Filters */}
+        {entries.length > 0 && (
+          <View style={[styles.filterGrid, isWide && { flexDirection: 'row' }, { marginTop: 10 }]}>
+            <View style={{ flex: 2, minWidth: 160 }}>
+              <TextInput
+                label="Search Description / Ref"
+                value={searchDesc}
+                onChangeText={setSearchDesc}
+                mode="outlined"
+                dense
+                left={<TextInput.Icon icon="magnify" />}
+                style={{ backgroundColor: '#fff', fontSize: 13 }}
+              />
+            </View>
+            <View style={{ flex: 1, flexDirection: 'row', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+              {(['all', 'debit', 'credit'] as const).map((bt) => (
+                <Chip
+                  key={bt}
+                  selected={txnType === bt}
+                  onPress={() => setTxnType(bt)}
+                  compact
+                  style={{ backgroundColor: txnType === bt ? (bt === 'debit' ? '#FFEBEE' : bt === 'credit' ? '#E0F2F1' : '#E8EAF6') : '#f5f5f5' }}
+                  textStyle={{ fontSize: 11, fontWeight: '600' }}
+                >
+                  {bt === 'all' ? 'All' : bt === 'debit' ? 'Debit Only' : 'Credit Only'}
+                </Chip>
+              ))}
+            </View>
+          </View>
+        )}
       </Surface>
 
       {isLoading && (
@@ -144,15 +204,15 @@ export default function PartyStatementScreen() {
             <ScrollView horizontal={!isWide}>
               <DataTable style={{ minWidth: isWide ? undefined : 600 }}>
                 <DataTable.Header style={styles.tableHeader}>
-                  <DataTable.Title style={{ flex: 1.2 }}><Text style={styles.thText}>Date</Text></DataTable.Title>
-                  <DataTable.Title style={{ flex: 2.5 }}><Text style={styles.thText}>Description</Text></DataTable.Title>
-                  <DataTable.Title style={{ flex: 0.8 }}><Text style={styles.thText}>Ref</Text></DataTable.Title>
-                  <DataTable.Title numeric style={{ flex: 1.2 }}><Text style={styles.thText}>Debit</Text></DataTable.Title>
-                  <DataTable.Title numeric style={{ flex: 1.2 }}><Text style={styles.thText}>Credit</Text></DataTable.Title>
-                  <DataTable.Title numeric style={{ flex: 1.5 }}><Text style={styles.thText}>Balance</Text></DataTable.Title>
+                  <SortableHeader label="Date" sortKey="date" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} style={{ flex: 1.2 }} />
+                  <SortableHeader label="Description" sortKey="description" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} style={{ flex: 2.5 }} />
+                  <SortableHeader label="Ref" sortKey="reference" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} style={{ flex: 0.8 }} />
+                  <SortableHeader label="Debit" sortKey="debit" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} numeric style={{ flex: 1.2 }} />
+                  <SortableHeader label="Credit" sortKey="credit" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} numeric style={{ flex: 1.2 }} />
+                  <SortableHeader label="Balance" sortKey="balance" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} numeric style={{ flex: 1.5 }} />
                 </DataTable.Header>
 
-                {entries.map((e: any, i: number) => (
+                {filteredEntries.map((e: any, i: number) => (
                   <DataTable.Row key={i}>
                     <DataTable.Cell style={{ flex: 1.2 }}><Text style={styles.cellText}>{formatDate(e.date)}</Text></DataTable.Cell>
                     <DataTable.Cell style={{ flex: 2.5 }}><Text style={styles.cellText}>{e.description}</Text></DataTable.Cell>

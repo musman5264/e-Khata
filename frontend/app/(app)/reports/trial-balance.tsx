@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Card, Surface, DataTable } from 'react-native-paper';
+import { Text, Card, Surface, DataTable, TextInput, Chip } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
@@ -8,11 +8,28 @@ import { colors, spacing } from '@/theme';
 import { formatCurrency, formatCurrencyUrdu } from '@/utils/formatCurrency';
 import ReportActions from '@/components/ReportActions';
 import DateInput from '@/components/DateInput';
+import SortableHeader, { toggleSort, sortData, type SortOrder } from '@/components/SortableHeader';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 export default function TrialBalanceScreen() {
   const { t } = useTranslation();
+  const businessInfo = useCurrentBusiness();
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+
+  // Filters
+  const [searchName, setSearchName] = useState('');
+  const [balanceType, setBalanceType] = useState<'all' | 'debit' | 'credit'>('all');
+
+  // Sort
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+
+  const handleSort = (key: string) => {
+    const result = toggleSort(sortBy, sortOrder, key);
+    setSortBy(result.sortBy);
+    setSortOrder(result.sortOrder);
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ['trial-balance', dateFrom, dateTo],
@@ -25,15 +42,35 @@ export default function TrialBalanceScreen() {
     },
   });
 
+  // Apply client-side filters + sort
+  const filteredParties = useMemo(() => {
+    let parties = data?.parties || [];
+    if (searchName) {
+      const q = searchName.toLowerCase();
+      parties = parties.filter((p: any) => p.name?.toLowerCase().includes(q));
+    }
+    if (balanceType === 'debit') parties = parties.filter((p: any) => p.net_balance > 0);
+    if (balanceType === 'credit') parties = parties.filter((p: any) => p.net_balance < 0);
+
+    // Map sort keys
+    const mapped = parties.map((p: any) => ({
+      ...p,
+      debit: p.debit_balance,
+      credit: p.credit_balance,
+      balance: Math.abs(p.net_balance ?? 0),
+    }));
+    return sortData(mapped, sortBy, sortOrder);
+  }, [data?.parties, searchName, balanceType, sortBy, sortOrder]);
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header with actions */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.base }}>
         <Text variant="headlineSmall" style={{ fontWeight: '700' }}>Trial Balance</Text>
-        {data?.parties?.length > 0 && <ReportActions reportTitle="Trial_Balance" />}
+        {filteredParties.length > 0 && <ReportActions reportTitle="Trial_Balance" businessInfo={businessInfo} />}
       </View>
 
-      {/* Date Filters */}
+      {/* Date Filters + Search + Balance Type */}
       <Surface style={styles.filterCard} nativeID="report-filter-card">
         <View style={styles.filterRow}>
           <View style={{ flex: 1, minWidth: 130 }}>
@@ -41,6 +78,33 @@ export default function TrialBalanceScreen() {
           </View>
           <View style={{ flex: 1, minWidth: 130 }}>
             <DateInput label="To Date" value={dateTo} onChangeText={setDateTo} />
+          </View>
+        </View>
+        <View style={[styles.filterRow, { marginTop: 10 }]}>
+          <View style={{ flex: 2, minWidth: 160 }}>
+            <TextInput
+              label="Search Party"
+              value={searchName}
+              onChangeText={setSearchName}
+              mode="outlined"
+              dense
+              left={<TextInput.Icon icon="magnify" />}
+              style={{ backgroundColor: '#fff', fontSize: 13 }}
+            />
+          </View>
+          <View style={{ flex: 1, flexDirection: 'row', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+            {(['all', 'debit', 'credit'] as const).map((bt) => (
+              <Chip
+                key={bt}
+                selected={balanceType === bt}
+                onPress={() => setBalanceType(bt)}
+                compact
+                style={{ backgroundColor: balanceType === bt ? (bt === 'debit' ? '#FFEBEE' : bt === 'credit' ? '#E0F2F1' : '#E8EAF6') : '#f5f5f5' }}
+                textStyle={{ fontSize: 11, fontWeight: '600' }}
+              >
+                {bt === 'all' ? 'All' : bt === 'debit' ? 'Receivable' : 'Payable'}
+              </Chip>
+            ))}
           </View>
         </View>
       </Surface>
@@ -68,13 +132,13 @@ export default function TrialBalanceScreen() {
       <Card style={styles.tableCard} mode="outlined">
         <DataTable>
           <DataTable.Header>
-            <DataTable.Title>{t('party.name')}</DataTable.Title>
-            <DataTable.Title numeric>{t('transaction.debit')}</DataTable.Title>
-            <DataTable.Title numeric>{t('transaction.credit')}</DataTable.Title>
-            <DataTable.Title numeric>{t('party.balance')}</DataTable.Title>
+            <SortableHeader label={t('party.name')} sortKey="name" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} />
+            <SortableHeader label={t('transaction.debit')} sortKey="debit" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} numeric />
+            <SortableHeader label={t('transaction.credit')} sortKey="credit" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} numeric />
+            <SortableHeader label={t('party.balance')} sortKey="balance" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} numeric />
           </DataTable.Header>
 
-          {data?.parties?.map((party: any) => (
+          {filteredParties.map((party: any) => (
             <DataTable.Row key={party.id}>
               <DataTable.Cell>{party.name}</DataTable.Cell>
               <DataTable.Cell numeric>
