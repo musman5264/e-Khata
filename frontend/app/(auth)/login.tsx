@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, useWindowDimensions } from 'react-native';
 import { TextInput, Button, Text, Surface } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +11,8 @@ export default function LoginScreen() {
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
   const isLoading = useAuthStore((s) => s.isLoading);
+  const { width } = useWindowDimensions();
+  const isWide = Platform.OS === 'web' && width > 600;
 
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
@@ -27,105 +29,215 @@ export default function LoginScreen() {
     }
   };
 
+  const formContent = (
+    <>
+      <Text variant="titleLarge" style={styles.cardTitle}>{t('auth.login')}</Text>
+      <Text style={styles.cardSubtitle}>Enter your credentials to continue</Text>
+
+      {error ? (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
+
+      <TextInput
+        label={t('auth.mobile')}
+        value={mobile}
+        onChangeText={setMobile}
+        keyboardType="phone-pad"
+        mode="outlined"
+        left={<TextInput.Affix text="+92" />}
+        left={<TextInput.Icon icon="phone" />}
+        outlineStyle={styles.inputOutline}
+        style={styles.input}
+      />
+
+      <TextInput
+        label={t('auth.password')}
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry={!showPassword}
+        mode="outlined"
+        left={<TextInput.Icon icon="lock" />}
+        right={
+          <TextInput.Icon
+            icon={showPassword ? 'eye-off' : 'eye'}
+            onPress={() => setShowPassword(!showPassword)}
+          />
+        }
+        outlineStyle={styles.inputOutline}
+        style={styles.input}
+      />
+
+      <Button
+        mode="contained"
+        onPress={handleLogin}
+        loading={isLoading}
+        disabled={isLoading || !mobile || !password}
+        style={styles.button}
+        contentStyle={styles.buttonContent}
+        labelStyle={styles.buttonLabel}
+      >
+        {t('auth.login')}
+      </Button>
+
+      <Button
+        mode="text"
+        onPress={() => router.push('/(auth)/register')}
+        style={styles.linkButton}
+        labelStyle={{ fontSize: 13 }}
+      >
+        Don't have an account? {t('auth.register')}
+      </Button>
+    </>
+  );
+
+  // ── Web: Split layout with branding panel + form ──
+  if (isWide) {
+    return (
+      <View style={styles.webContainer}>
+        {/* Left branding panel */}
+        <View style={styles.webBranding}>
+          <View style={styles.brandContent}>
+            <Text style={styles.webLogo}>📒</Text>
+            <Text style={styles.webAppName}>e-Khata</Text>
+            <Text style={styles.webTagline}>
+              Your digital ledger for{'\n'}Pakistani businesses
+            </Text>
+            <View style={styles.webFeatures}>
+              {['Track Udhar & Jama', 'Share statements on WhatsApp', 'Team access with roles', 'PKR payments via JazzCash'].map((f) => (
+                <View key={f} style={styles.featureRow}>
+                  <Text style={styles.featureCheck}>✓</Text>
+                  <Text style={styles.featureText}>{f}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+          <Text style={styles.webFooterBrand}>Powered by Esystematic Technologies</Text>
+        </View>
+
+        {/* Right form panel */}
+        <View style={styles.webFormPanel}>
+          <View style={styles.webFormInner}>
+            {formContent}
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // ── Mobile: Full-screen gradient with card ──
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        {/* Logo / Header */}
         <View style={styles.header}>
-          <Text variant="headlineLarge" style={styles.appName}>e-Khata</Text>
-          <Text variant="bodyMedium" style={styles.subtitle}>
-            Digital Ledger for Pakistani Businesses
-          </Text>
+          <Text style={styles.logoEmoji}>📒</Text>
+          <Text style={styles.appName}>e-Khata</Text>
+          <Text style={styles.subtitle}>Digital Ledger for Pakistani Businesses</Text>
         </View>
 
-        {/* Login Form */}
         <Surface style={styles.card}>
-          <Text variant="titleLarge" style={styles.cardTitle}>{t('auth.login')}</Text>
-
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-
-          <TextInput
-            label={t('auth.mobile')}
-            value={mobile}
-            onChangeText={setMobile}
-            keyboardType="phone-pad"
-            mode="outlined"
-            left={<TextInput.Affix text="+92 " />}
-            style={styles.input}
-          />
-
-          <TextInput
-            label={t('auth.password')}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            mode="outlined"
-            right={
-              <TextInput.Icon
-                icon={showPassword ? 'eye-off' : 'eye'}
-                onPress={() => setShowPassword(!showPassword)}
-              />
-            }
-            style={styles.input}
-          />
-
-          <Button
-            mode="contained"
-            onPress={handleLogin}
-            loading={isLoading}
-            disabled={isLoading || !mobile || !password}
-            style={styles.button}
-            contentStyle={styles.buttonContent}
-          >
-            {t('auth.login')}
-          </Button>
-
-          <Button
-            mode="text"
-            onPress={() => router.push('/(auth)/register')}
-            style={styles.linkButton}
-          >
-            Don't have an account? {t('auth.register')}
-          </Button>
+          {formContent}
         </Surface>
 
-        {/* Footer */}
-        <Text style={styles.footer}>
-          Powered by Esystematic Technologies
-        </Text>
+        <Text style={styles.footer}>Powered by Esystematic Technologies</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  // ── Mobile styles ──
   container: { flex: 1, backgroundColor: colors.primary },
   scrollContent: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl },
-  header: { alignItems: 'center', marginBottom: spacing.xxl },
-  appName: { color: '#fff', fontWeight: 'bold', fontSize: 36 },
-  subtitle: { color: 'rgba(255,255,255,0.8)', marginTop: spacing.xs },
+  header: { alignItems: 'center', marginBottom: 32 },
+  logoEmoji: { fontSize: 52, marginBottom: 8 },
+  appName: { color: '#fff', fontWeight: '800', fontSize: 34, letterSpacing: 1 },
+  subtitle: { color: 'rgba(255,255,255,0.7)', marginTop: 6, fontSize: 14 },
   card: {
-    padding: spacing.xl,
-    borderRadius: 16,
-    elevation: 4,
+    padding: 28,
+    borderRadius: 20,
+    elevation: 6,
+    backgroundColor: colors.surface,
   },
-  cardTitle: { fontWeight: '600', marginBottom: spacing.base, textAlign: 'center' },
-  input: { marginBottom: spacing.md },
+  cardTitle: { fontWeight: '700', textAlign: 'center', color: colors.text, fontSize: 22 },
+  cardSubtitle: { textAlign: 'center', color: colors.textSecondary, marginBottom: 20, fontSize: 13 },
+  errorBanner: {
+    backgroundColor: '#FFF0F0',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.error,
+  },
+  errorText: { color: colors.error, fontSize: 13 },
+  input: { marginBottom: 14, backgroundColor: 'transparent' },
+  inputOutline: { borderRadius: 12, borderColor: colors.outline },
   button: {
-    marginTop: spacing.base,
-    borderRadius: 8,
+    marginTop: 8,
+    borderRadius: 12,
     backgroundColor: colors.primary,
+    elevation: 2,
   },
-  buttonContent: { paddingVertical: 6 },
-  linkButton: { marginTop: spacing.md },
-  error: { color: colors.error, textAlign: 'center', marginBottom: spacing.md },
+  buttonContent: { paddingVertical: 8 },
+  buttonLabel: { fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
+  linkButton: { marginTop: 12 },
   footer: {
     textAlign: 'center',
-    color: 'rgba(255,255,255,0.5)',
-    marginTop: spacing.xxl,
+    color: 'rgba(255,255,255,0.4)',
+    marginTop: 32,
     fontSize: 11,
+  },
+
+  // ── Web split layout ──
+  webContainer: { flex: 1, flexDirection: 'row' },
+  webBranding: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 48,
+  },
+  brandContent: { maxWidth: 400 },
+  webLogo: { fontSize: 64, marginBottom: 16 },
+  webAppName: { color: '#fff', fontWeight: '800', fontSize: 42, letterSpacing: 1.5 },
+  webTagline: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 18,
+    marginTop: 12,
+    lineHeight: 28,
+  },
+  webFeatures: { marginTop: 36 },
+  featureRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+  featureCheck: { color: colors.secondary, fontSize: 18, fontWeight: 'bold', marginRight: 12 },
+  featureText: { color: 'rgba(255,255,255,0.85)', fontSize: 15 },
+  webFooterBrand: {
+    position: 'absolute',
+    bottom: 24,
+    color: 'rgba(255,255,255,0.35)',
+    fontSize: 12,
+  },
+  webFormPanel: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    padding: 48,
+  },
+  webFormInner: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: colors.surface,
+    padding: 40,
+    borderRadius: 24,
+    // @ts-ignore web shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 32,
+    elevation: 4,
   },
 });
