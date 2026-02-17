@@ -296,13 +296,26 @@ class ReportController extends Controller
             'is_closing' => true,
         ];
 
+        $tenant = app('currentTenant');
+
         return response()->json([
             'success' => true,
             'data' => [
+                'business' => [
+                    'name' => $tenant->name,
+                    'address' => $tenant->getSetting('address', ''),
+                    'city' => $tenant->getSetting('city', ''),
+                    'phone' => $tenant->getSetting('phone', ''),
+                    'email' => $tenant->getSetting('email', ''),
+                    'logo_url' => $tenant->logo_url,
+                ],
                 'party' => [
                     'id' => $party->id,
                     'name' => $party->name,
                     'mobile' => $party->mobile,
+                    'email' => $party->email,
+                    'address' => $party->address,
+                    'city' => $party->city,
                     'type' => $party->type,
                     'khata_number' => $party->khata_number,
                     'book_number' => $party->book_number,

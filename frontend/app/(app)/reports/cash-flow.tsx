@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
+import ReportActions from '@/components/ReportActions';
 
 type PeriodType = 'daily' | 'weekly' | 'monthly';
 
@@ -36,9 +37,12 @@ export default function CashFlowScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header */}
-      <View style={styles.headerRow}>
-        <MaterialCommunityIcons name="chart-line" size={28} color="#8B5CF6" />
-        <Text variant="headlineSmall" style={styles.title}>Cash Flow Summary</Text>
+      <View style={[styles.headerRow, { justifyContent: 'space-between' }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <MaterialCommunityIcons name="chart-line" size={28} color="#8B5CF6" />
+          <Text variant="headlineSmall" style={styles.title}>Cash Flow Summary</Text>
+        </View>
+        {periods.length > 0 && <ReportActions />}
       </View>
 
       {/* Filters */}

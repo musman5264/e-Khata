@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import ReportActions from '@/components/ReportActions';
 
 export default function PaymentSummaryScreen() {
   const { t } = useTranslation();
@@ -32,7 +33,10 @@ export default function PaymentSummaryScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text variant="headlineSmall" style={styles.title}>{t('report.paymentReport')}</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg }}>
+        <Text variant="headlineSmall" style={{ fontWeight: '700' }}>{t('report.paymentReport')}</Text>
+        {data?.payments?.length > 0 && <ReportActions />}
+      </View>
 
       <View style={styles.statsRow}>
         <Surface style={styles.statCard}>

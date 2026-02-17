@@ -7,6 +7,7 @@ import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate } from '@/utils/formatDate';
+import ReportActions from '@/components/ReportActions';
 
 export default function PayableAgingScreen() {
   const { t } = useTranslation();
@@ -24,6 +25,12 @@ export default function PayableAgingScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Header with actions */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.base }}>
+        <Text variant="headlineSmall" style={{ fontWeight: '700' }}>Payable Aging</Text>
+        {data?.parties?.length > 0 && <ReportActions />}
+      </View>
+
       <View style={styles.summaryRow}>
         <Surface style={[styles.summaryCard, { backgroundColor: '#E0F2F1' }]}>
           <Text style={styles.summaryLabel}>{t('report.payableAging')}</Text>

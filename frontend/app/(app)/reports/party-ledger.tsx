@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, useWindowDimensions, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import { Text, Surface, ActivityIndicator, Button, Divider, TextInput, DataTable, Chip } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
@@ -7,6 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import SearchableDropdown from '@/components/SearchableDropdown';
+import ReportActions from '@/components/ReportActions';
 
 export default function PartyLedgerScreen() {
   const router = useRouter();
@@ -47,6 +48,7 @@ export default function PartyLedgerScreen() {
 
   const ledger = ledgerData?.ledger || [];
   const party = ledgerData?.party;
+  const business = ledgerData?.business;
   const totals = ledgerData?.totals;
 
   const formatAmount = (val: number) =>
@@ -54,10 +56,13 @@ export default function PartyLedgerScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header */}
+      {/* Header with actions */}
       <View style={styles.headerRow}>
-        <MaterialCommunityIcons name="book-open-page-variant" size={28} color={colors.primary} />
-        <Text variant="headlineSmall" style={styles.title}>Party Ledger</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+          <MaterialCommunityIcons name="book-open-page-variant" size={28} color={colors.primary} />
+          <Text variant="headlineSmall" style={styles.title}>Party Ledger</Text>
+        </View>
+        {ledger.length > 0 && <ReportActions />}
       </View>
 
       {/* Party Selector + Date Range */}
@@ -108,26 +113,73 @@ export default function PartyLedgerScreen() {
         </View>
       </Surface>
 
-      {/* Party Info */}
+      {/* Business & Party Info Cards — side by side 6x6 */}
       {party && (
-        <Surface style={styles.partyInfoCard}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-            <View>
-              <Text variant="titleMedium" style={{ fontWeight: '700' }}>{party.name}</Text>
-              <Text variant="bodySmall" style={{ color: colors.textSecondary }}>
-                {party.mobile}{party.khata_number ? ` · Khata #${party.khata_number}` : ''}
-                {party.book_number ? ` · Book #${party.book_number}` : ''}
-              </Text>
+        <View style={[styles.infoCardsRow, !isWide && { flexDirection: 'column' }]}>
+          {/* Business Info Card */}
+          <Surface style={[styles.infoCard, isWide && { flex: 1 }]}>
+            <View style={styles.infoCardHeader}>
+              <MaterialCommunityIcons name="domain" size={20} color={colors.primary} />
+              <Text variant="titleSmall" style={styles.infoCardTitle}>Business Information</Text>
             </View>
-            <Chip
-              mode="flat"
-              style={{ backgroundColor: (totals?.closing_balance || 0) >= 0 ? '#FFF0F0' : '#F0FFF4' }}
-              textStyle={{ fontWeight: '700', color: (totals?.closing_balance || 0) >= 0 ? colors.debit : colors.credit }}
-            >
-              {formatAmount(Math.abs(totals?.closing_balance || 0))} {totals?.balance_type || ''}
-            </Chip>
-          </View>
-        </Surface>
+            <Divider style={{ marginVertical: 8 }} />
+            <View style={styles.infoGrid}>
+              <InfoRow label="Business Name" value={business?.name || '-'} />
+              <InfoRow label="Address" value={business?.address || '-'} />
+              <InfoRow label="City" value={business?.city || '-'} />
+              <InfoRow label="Phone" value={business?.phone || '-'} />
+              {business?.email ? <InfoRow label="Email" value={business.email} /> : null}
+            </View>
+          </Surface>
+
+          {/* Party / Supplier-Customer Info Card */}
+          <Surface style={[styles.infoCard, isWide && { flex: 1 }]}>
+            <View style={styles.infoCardHeader}>
+              <MaterialCommunityIcons
+                name={party.type === 'supplier' ? 'truck-delivery' : 'account-cash'}
+                size={20}
+                color={party.type === 'supplier' ? '#E67E22' : '#27AE60'}
+              />
+              <Text variant="titleSmall" style={styles.infoCardTitle}>
+                {party.type === 'supplier' ? 'Supplier' : 'Customer'} Information
+              </Text>
+              <Chip
+                mode="flat"
+                compact
+                style={[styles.typeChip, {
+                  backgroundColor: party.type === 'supplier' ? '#FFF3E0' : '#E8F5E9',
+                }]}
+                textStyle={{
+                  fontSize: 10,
+                  fontWeight: '700',
+                  color: party.type === 'supplier' ? '#E67E22' : '#27AE60',
+                }}
+              >
+                {(party.type || 'customer').toUpperCase()}
+              </Chip>
+            </View>
+            <Divider style={{ marginVertical: 8 }} />
+            <View style={styles.infoGrid}>
+              <InfoRow label="Name" value={party.name} />
+              <InfoRow label="Mobile" value={party.mobile || '-'} />
+              {party.email ? <InfoRow label="Email" value={party.email} /> : null}
+              {party.address ? (
+                <InfoRow label="Address" value={`${party.address}${party.city ? `, ${party.city}` : ''}`} />
+              ) : null}
+              <InfoRow label="Khata #" value={party.khata_number || '-'} />
+              {party.book_number ? <InfoRow label="Book #" value={party.book_number} /> : null}
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Balance</Text>
+                <Text style={[styles.infoValue, {
+                  color: (totals?.closing_balance || 0) >= 0 ? colors.debit : colors.credit,
+                  fontWeight: '700',
+                }]}>
+                  {formatAmount(Math.abs(totals?.closing_balance || 0))} {totals?.balance_type || ''}
+                </Text>
+              </View>
+            </View>
+          </Surface>
+        </View>
       )}
 
       {isLoading && (
@@ -140,7 +192,7 @@ export default function PartyLedgerScreen() {
       {ledger.length > 0 && (
         <Surface style={styles.tableCard}>
           <ScrollView horizontal={!isWide}>
-            <DataTable style={{ minWidth: isWide ? undefined : 650 }}>
+            <DataTable style={{ minWidth: isWide ? undefined : 750 }}>
               <DataTable.Header style={styles.tableHeader}>
                 <DataTable.Title style={{ flex: 1.2 }}>
                   <Text style={styles.thText}>Date</Text>
@@ -148,7 +200,7 @@ export default function PartyLedgerScreen() {
                 <DataTable.Title style={{ flex: 2.5 }}>
                   <Text style={styles.thText}>Description</Text>
                 </DataTable.Title>
-                <DataTable.Title style={{ flex: 1 }}>
+                <DataTable.Title style={{ flex: 1.2 }}>
                   <Text style={styles.thText}>Ref #</Text>
                 </DataTable.Title>
                 <DataTable.Title numeric style={{ flex: 1.2 }}>
@@ -180,7 +232,7 @@ export default function PartyLedgerScreen() {
                       {entry.description}
                     </Text>
                   </DataTable.Cell>
-                  <DataTable.Cell style={{ flex: 1 }}>
+                  <DataTable.Cell style={{ flex: 1.2 }}>
                     <Text style={styles.cellText}>{entry.reference_number || ''}</Text>
                   </DataTable.Cell>
                   <DataTable.Cell numeric style={{ flex: 1.2 }}>
@@ -203,35 +255,42 @@ export default function PartyLedgerScreen() {
                   </DataTable.Cell>
                 </DataTable.Row>
               ))}
+
+              {/* Totals Footer — aligned under respective columns */}
+              {totals && (
+                <DataTable.Row style={styles.totalsFooterRow}>
+                  <DataTable.Cell style={{ flex: 1.2 }}>
+                    <Text style={styles.totalsFooterLabel}>
+                      {totals.transaction_count} Txns
+                    </Text>
+                  </DataTable.Cell>
+                  <DataTable.Cell style={{ flex: 2.5 }}>
+                    <Text style={styles.totalsFooterLabel} />
+                  </DataTable.Cell>
+                  <DataTable.Cell style={{ flex: 1.2 }}>
+                    <Text style={styles.totalsFooterLabel} />
+                  </DataTable.Cell>
+                  <DataTable.Cell numeric style={{ flex: 1.2 }}>
+                    <Text style={[styles.totalsFooterValue, { color: colors.debit }]}>
+                      {formatAmount(totals.total_debit)}
+                    </Text>
+                  </DataTable.Cell>
+                  <DataTable.Cell numeric style={{ flex: 1.2 }}>
+                    <Text style={[styles.totalsFooterValue, { color: colors.credit }]}>
+                      {formatAmount(totals.total_credit)}
+                    </Text>
+                  </DataTable.Cell>
+                  <DataTable.Cell numeric style={{ flex: 1.5 }}>
+                    <Text style={[styles.totalsFooterValue, {
+                      color: totals.closing_balance >= 0 ? colors.debit : colors.credit,
+                    }]}>
+                      {formatAmount(Math.abs(totals.closing_balance))} {totals.balance_type}
+                    </Text>
+                  </DataTable.Cell>
+                </DataTable.Row>
+              )}
             </DataTable>
           </ScrollView>
-
-          {/* Totals Summary */}
-          {totals && (
-            <View style={styles.totalsSummary}>
-              <Divider style={{ marginBottom: 12 }} />
-              <View style={styles.totalsRow}>
-                <View style={styles.totalItem}>
-                  <Text style={styles.totalLabel}>Total Debit</Text>
-                  <Text style={[styles.totalValue, { color: colors.debit }]}>{formatAmount(totals.total_debit)}</Text>
-                </View>
-                <View style={styles.totalItem}>
-                  <Text style={styles.totalLabel}>Total Credit</Text>
-                  <Text style={[styles.totalValue, { color: colors.credit }]}>{formatAmount(totals.total_credit)}</Text>
-                </View>
-                <View style={styles.totalItem}>
-                  <Text style={styles.totalLabel}>Closing Balance</Text>
-                  <Text style={[styles.totalValue, { color: totals.closing_balance >= 0 ? colors.debit : colors.credit }]}>
-                    {formatAmount(Math.abs(totals.closing_balance))} {totals.balance_type}
-                  </Text>
-                </View>
-                <View style={styles.totalItem}>
-                  <Text style={styles.totalLabel}>Transactions</Text>
-                  <Text style={styles.totalValue}>{totals.transaction_count}</Text>
-                </View>
-              </View>
-            </View>
-          )}
         </Surface>
       )}
 
@@ -245,28 +304,62 @@ export default function PartyLedgerScreen() {
   );
 }
 
+/* Small helper component for info rows */
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={infoRowStyles.row}>
+      <Text style={infoRowStyles.label}>{label}</Text>
+      <Text style={infoRowStyles.value}>{value}</Text>
+    </View>
+  );
+}
+
+const infoRowStyles = StyleSheet.create({
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 2 },
+  label: { fontSize: 12, color: colors.textSecondary, fontWeight: '500' },
+  value: { fontSize: 12, fontWeight: '600', color: '#333', textAlign: 'right', flexShrink: 1, maxWidth: '60%' },
+});
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.base, paddingBottom: 40 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: spacing.base },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.base },
   title: { fontWeight: '700' },
   filterCard: { padding: spacing.base, borderRadius: 14, backgroundColor: '#fff', elevation: 1, marginBottom: 12 },
   filterGrid: { gap: 12 },
   filterLabel: { marginBottom: 4, color: colors.textSecondary, fontWeight: '600' },
   dateInput: { backgroundColor: '#fff', fontSize: 13 },
-  partyInfoCard: { padding: spacing.base, borderRadius: 14, backgroundColor: '#fff', elevation: 1, marginBottom: 12 },
-  tableCard: { borderRadius: 14, backgroundColor: '#fff', elevation: 1, overflow: 'hidden' },
+
+  /* Info Cards */
+  infoCardsRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  infoCard: { padding: spacing.base, borderRadius: 14, backgroundColor: '#fff', elevation: 1 },
+  infoCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  infoCardTitle: { fontWeight: '700', flex: 1 },
+  typeChip: { height: 24 },
+  infoGrid: { gap: 4 },
+  infoItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 2 },
+  infoLabel: { fontSize: 12, color: colors.textSecondary, fontWeight: '500' },
+  infoValue: { fontSize: 12, fontWeight: '600', color: '#333', textAlign: 'right', flexShrink: 1 },
+
+  /* Table */
+  tableCard: { borderRadius: 14, backgroundColor: '#fff', elevation: 1, overflow: 'hidden', marginBottom: 12 },
   tableHeader: { backgroundColor: '#F5F7FF' },
   thText: { fontWeight: '700', fontSize: 12, color: '#333' },
   cellText: { fontSize: 12 },
   boldText: { fontWeight: '700' },
   openingRow: { backgroundColor: '#F0F7FF' },
   closingRow: { backgroundColor: '#FFF8E1' },
-  totalsSummary: { padding: spacing.base },
-  totalsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
-  totalItem: { minWidth: 130 },
-  totalLabel: { fontSize: 11, color: colors.textSecondary, marginBottom: 2 },
-  totalValue: { fontSize: 15, fontWeight: '700' },
+
+  /* Totals Footer Row — inside table, aligned to columns */
+  totalsFooterRow: {
+    backgroundColor: '#F8F9FC',
+    borderTopWidth: 2,
+    borderTopColor: '#E0E0E0',
+    minHeight: 48,
+  },
+  totalsFooterLabel: { fontSize: 12, fontWeight: '700', color: '#555' },
+  totalsFooterValue: { fontSize: 13, fontWeight: '800' },
+
   centered: { padding: 40, alignItems: 'center' },
   emptyCard: { padding: 40, borderRadius: 14, alignItems: 'center', backgroundColor: '#fff', elevation: 1 },
 });

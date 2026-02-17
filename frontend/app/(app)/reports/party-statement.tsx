@@ -7,6 +7,7 @@ import { useLocalSearchParams } from 'expo-router';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import SearchableDropdown from '@/components/SearchableDropdown';
+import ReportActions from '@/components/ReportActions';
 
 export default function PartyStatementScreen() {
   const params = useLocalSearchParams<{ partyId?: string }>();
@@ -53,9 +54,12 @@ export default function PartyStatementScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header */}
-      <View style={styles.headerRow}>
-        <MaterialCommunityIcons name="file-document-outline" size={28} color="#E84393" />
-        <Text variant="headlineSmall" style={styles.title}>Party Statement</Text>
+      <View style={[styles.headerRow, { justifyContent: 'space-between' }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <MaterialCommunityIcons name="file-document-outline" size={28} color="#E84393" />
+          <Text variant="headlineSmall" style={styles.title}>Party Statement</Text>
+        </View>
+        {entries.length > 0 && <ReportActions />}
       </View>
 
       {/* Filters */}

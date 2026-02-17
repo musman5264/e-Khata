@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import ReportActions from '@/components/ReportActions';
 
 export default function TrialBalanceScreen() {
   const { t } = useTranslation();
@@ -20,6 +21,12 @@ export default function TrialBalanceScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Header with actions */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.base }}>
+        <Text variant="headlineSmall" style={{ fontWeight: '700' }}>Trial Balance</Text>
+        {data?.parties?.length > 0 && <ReportActions />}
+      </View>
+
       {/* Summary Cards */}
       <View style={styles.summaryRow}>
         <Surface style={[styles.summaryCard, { backgroundColor: '#FFEBEE' }]}>
