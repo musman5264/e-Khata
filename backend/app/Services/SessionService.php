@@ -54,27 +54,49 @@ class SessionService
 
     /**
      * Deactivate a session.
+     * Accepts a Session object, session ID string, or any value.
      */
-    public function revokeSession(string $sessionId): void
+    public function revokeSession(mixed $session, ?User $user = null): void
     {
-        $session = Session::findOrFail($sessionId);
-        $session->deactivate();
+        if (is_string($session)) {
+            $session = Session::findOrFail($session);
+        }
 
-        // Also revoke the associated Sanctum token if possible
-        if ($session->token_id) {
-            \Laravel\Sanctum\PersonalAccessToken::where('id', $session->token_id)->delete();
+        if ($session instanceof Session) {
+            $session->deactivate();
+
+            // Also revoke the associated Sanctum token if possible
+            if ($session->token_id) {
+                \Laravel\Sanctum\PersonalAccessToken::where('id', $session->token_id)->delete();
+            }
         }
     }
 
     /**
      * Revoke all sessions except the current one.
+     * Accepts User object or user ID, and session ID or token ID.
      */
-    public function revokeAllExcept(int $userId, string $currentSessionId): int
+    public function revokeAllExcept(mixed $userOrId, mixed $currentIdentifier): int
     {
-        $sessions = Session::where('user_id', $userId)
-            ->where('id', '!=', $currentSessionId)
+        $userId = $userOrId instanceof User ? $userOrId->id : $userOrId;
+
+        // Try to find the current session by token_id first, then by session id
+        $currentSession = Session::where('user_id', $userId)
             ->where('is_active', true)
-            ->get();
+            ->where(function ($q) use ($currentIdentifier) {
+                $q->where('id', $currentIdentifier)
+                  ->orWhere('token_id', $currentIdentifier);
+            })
+            ->first();
+
+        $query = Session::where('user_id', $userId)
+            ->where('is_active', true);
+
+        if ($currentSession) {
+            $query->where('id', '!=', $currentSession->id);
+        }
+
+        $sessions = $query->get();
 
         foreach ($sessions as $session) {
             $session->deactivate();

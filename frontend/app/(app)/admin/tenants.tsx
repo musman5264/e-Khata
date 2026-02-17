@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
+import { formatDate } from '@/utils/formatDate';
 
 interface Tenant {
   id: number;
@@ -143,7 +144,7 @@ export default function AdminTenantsScreen() {
                   <DetailItem icon="phone" label="Phone" value={selectedTenant.phone || '—'} />
                   <DetailItem icon="email-outline" label="Email" value={selectedTenant.email || '—'} />
                   <DetailItem icon="account-group" label="Users" value={`${selectedTenant.users_count} member(s)`} />
-                  <DetailItem icon="calendar" label="Created" value={new Date(selectedTenant.created_at).toLocaleDateString()} />
+                  <DetailItem icon="calendar" label="Created" value={formatDate(selectedTenant.created_at)} />
                 </View>
 
                 {detail?.users && detail.users.length > 0 && (

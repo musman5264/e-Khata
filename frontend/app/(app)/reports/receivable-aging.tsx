@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatDate } from '@/utils/formatDate';
 
 export default function ReceivableAgingScreen() {
   const { t } = useTranslation();
@@ -51,7 +52,7 @@ export default function ReceivableAgingScreen() {
                   {formatCurrency(party.balance)}
                 </Text>
               </DataTable.Cell>
-              <DataTable.Cell numeric>{party.last_txn_date || '—'}</DataTable.Cell>
+              <DataTable.Cell numeric>{formatDate(party.last_txn_date)}</DataTable.Cell>
             </DataTable.Row>
           ))}
 

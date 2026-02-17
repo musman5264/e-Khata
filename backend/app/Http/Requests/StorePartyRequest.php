@@ -11,6 +11,17 @@ class StorePartyRequest extends ApiFormRequest
             fn($v) => $v === '' ? null : $v,
             $this->only(['mobile', 'email', 'address', 'city', 'khata_number', 'book_number', 'notes', 'opening_balance', 'opening_balance_type'])
         ));
+
+        // Normalize mobile: if 11-digit local (03xx), convert to 923xx format
+        if ($this->mobile) {
+            $mobile = preg_replace('/[^0-9]/', '', $this->mobile);
+            if (strlen($mobile) === 11 && str_starts_with($mobile, '0')) {
+                $mobile = '92' . substr($mobile, 1);
+            } elseif (strlen($mobile) === 10 && str_starts_with($mobile, '3')) {
+                $mobile = '92' . $mobile;
+            }
+            $this->merge(['mobile' => $mobile]);
+        }
     }
 
     public function rules(): array

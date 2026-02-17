@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
+import { formatDate } from '@/utils/formatDate';
 
 export default function AdminBusinessReport() {
   const { t } = useTranslation();
@@ -46,7 +47,7 @@ export default function AdminBusinessReport() {
               <DataTable.Cell numeric>{b.users_count ?? 0}</DataTable.Cell>
               <DataTable.Cell numeric>{b.parties_count ?? 0}</DataTable.Cell>
               <DataTable.Cell numeric>{b.transactions_count ?? 0}</DataTable.Cell>
-              <DataTable.Cell>{b.created_at ? new Date(b.created_at).toLocaleDateString() : '-'}</DataTable.Cell>
+              <DataTable.Cell>{formatDate(b.created_at)}</DataTable.Cell>
             </DataTable.Row>
           ))}
           {businesses.length === 0 && (

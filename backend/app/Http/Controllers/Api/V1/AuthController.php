@@ -27,6 +27,18 @@ class AuthController extends Controller
      */
     public function register(Request $request): JsonResponse
     {
+        // Normalize mobile: 03xx → 923xx
+        $mobile = $request->mobile;
+        if ($mobile) {
+            $mobile = preg_replace('/[^0-9]/', '', $mobile);
+            if (strlen($mobile) === 11 && str_starts_with($mobile, '0')) {
+                $mobile = '92' . substr($mobile, 1);
+            } elseif (strlen($mobile) === 10 && str_starts_with($mobile, '3')) {
+                $mobile = '92' . $mobile;
+            }
+            $request->merge(['mobile' => $mobile]);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|unique:users,email',
@@ -67,7 +79,15 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        $user = User::where('mobile', $request->mobile)->first();
+        // Normalize mobile: 03xx → 923xx for lookup
+        $mobile = preg_replace('/[^0-9]/', '', $request->mobile);
+        if (strlen($mobile) === 11 && str_starts_with($mobile, '0')) {
+            $mobile = '92' . substr($mobile, 1);
+        } elseif (strlen($mobile) === 10 && str_starts_with($mobile, '3')) {
+            $mobile = '92' . $mobile;
+        }
+
+        $user = User::where('mobile', $mobile)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([

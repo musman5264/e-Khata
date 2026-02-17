@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 export default function CreatePartyScreen() {
   const { t } = useTranslation();
@@ -75,7 +76,12 @@ export default function CreatePartyScreen() {
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!form.name.trim()) newErrors.name = t('party.nameRequired');
-    if (form.mobile.trim() && form.mobile.trim().length < 10) newErrors.mobile = t('party.invalidMobile');
+    if (form.mobile.trim()) {
+      const digits = form.mobile.trim().replace(/[^0-9]/g, '');
+      if (digits.length !== 11 || !digits.startsWith('0')) {
+        newErrors.mobile = t('party.invalidMobile') + ' (e.g. 03345266444)';
+      }
+    }
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) newErrors.email = t('party.invalidEmail');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -141,7 +147,7 @@ export default function CreatePartyScreen() {
       <Surface style={s.formCard}>
         <TextInput ref={nameRef} label={t('party.name')} value={form.name} onChangeText={(v) => updateField('name', v)} error={!!errors.name} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="account" />} returnKeyType="next" onSubmitEditing={() => mobileRef.current?.focus()} autoFocus={false} />
         {errors.name && <Text style={s.error}>{errors.name}</Text>}
-        <TextInput ref={mobileRef} label={t('party.mobile')} value={form.mobile} onChangeText={(v) => updateField('mobile', v)} keyboardType="phone-pad" error={!!errors.mobile} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="phone" />} returnKeyType="done" />
+        <TextInput ref={mobileRef} label={t('party.mobile')} value={form.mobile} onChangeText={(v) => updateField('mobile', v.replace(/[^0-9]/g, '').slice(0, 11))} keyboardType="phone-pad" error={!!errors.mobile} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="phone" />} returnKeyType="done" placeholder="03345266444" />
         {errors.mobile && <Text style={s.error}>{errors.mobile}</Text>}
         <TextInput label={t('party.email') + ' (optional)'} value={form.email} onChangeText={(v) => updateField('email', v)} keyboardType="email-address" error={!!errors.email} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="email-outline" />} />
         {errors.email && <Text style={s.error}>{errors.email}</Text>}
@@ -196,6 +202,7 @@ export default function CreatePartyScreen() {
   if (isWeb) {
     return (
       <View style={wStyles.container}>
+        <LoadingOverlay visible={mutation.isPending} message="Saving party..." />
         {/* Web Header Bar */}
         <View style={wStyles.headerBar}>
           <TouchableOpacity onPress={() => router.back()} style={wStyles.backBtn}>
@@ -239,6 +246,7 @@ export default function CreatePartyScreen() {
   // ═══════════════════════════════════
   return (
     <View style={mStyles.container}>
+      <LoadingOverlay visible={mutation.isPending} message="Saving party..." />
       {/* Mobile Header */}
       <View style={mStyles.header}>
         <TouchableOpacity onPress={() => router.back()} style={mStyles.headerBtn}>

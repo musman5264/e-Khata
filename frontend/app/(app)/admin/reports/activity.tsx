@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
+import { formatDateTime } from '@/utils/formatDate';
 
 export default function AdminActivityReport() {
   const { t } = useTranslation();
@@ -40,8 +41,8 @@ export default function AdminActivityReport() {
               <DataTable.Cell>{s.user?.name ?? '-'}</DataTable.Cell>
               <DataTable.Cell>{[s.device, s.platform].filter(Boolean).join(' / ') || '-'}</DataTable.Cell>
               <DataTable.Cell>{s.ip_address ?? '-'}</DataTable.Cell>
-              <DataTable.Cell>{s.login_at ? new Date(s.login_at).toLocaleString() : '-'}</DataTable.Cell>
-              <DataTable.Cell>{s.last_active_at ? new Date(s.last_active_at).toLocaleString() : '-'}</DataTable.Cell>
+              <DataTable.Cell>{formatDateTime(s.login_at)}</DataTable.Cell>
+              <DataTable.Cell>{formatDateTime(s.last_active_at)}</DataTable.Cell>
             </DataTable.Row>
           ))}
           {sessions.length === 0 && (

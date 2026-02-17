@@ -3,11 +3,51 @@
 namespace App\Services;
 
 use App\Models\ActivityLog;
+use App\Models\Session;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
 class ActivityLogService
 {
+    /**
+     * Resolve the current session ID from the active request.
+     */
+    protected function resolveSessionId(): ?string
+    {
+        $user = Auth::user();
+        $request = request();
+
+        if (!$user || !$request) {
+            return null;
+        }
+
+        // Try to find session by device_id header
+        $deviceId = $request->header('X-Device-ID');
+        if ($deviceId) {
+            $session = Session::where('user_id', $user->id)
+                ->where('device_id', $deviceId)
+                ->where('is_active', true)
+                ->first();
+            if ($session) {
+                return $session->id;
+            }
+        }
+
+        // Fallback: find session by current token_id
+        $token = $user->currentAccessToken();
+        if ($token) {
+            $session = Session::where('user_id', $user->id)
+                ->where('token_id', $token->id)
+                ->where('is_active', true)
+                ->first();
+            if ($session) {
+                return $session->id;
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Log a user activity.
      */
@@ -25,7 +65,7 @@ class ActivityLogService
         return ActivityLog::create([
             'tenant_id' => $tenant?->id,
             'user_id' => $user?->id,
-            'session_id' => null,
+            'session_id' => $this->resolveSessionId(),
             'action' => $action,
             'model_type' => $model ? get_class($model) : null,
             'model_id' => $model?->getKey(),

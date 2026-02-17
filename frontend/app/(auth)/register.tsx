@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth';
 import { colors, spacing } from '@/theme';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 export default function RegisterScreen() {
   const { t } = useTranslation();
@@ -34,6 +35,7 @@ export default function RegisterScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <LoadingOverlay visible={isLoading} message="Creating account..." />
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <Text variant="headlineLarge" style={styles.appName}>e-Khata</Text>

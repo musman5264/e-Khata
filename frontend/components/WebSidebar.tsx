@@ -39,6 +39,7 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Settings', icon: 'cog-outline', activeIcon: 'cog', path: '/(app)/admin/settings', match: 'admin/settings' },
   { label: 'Users', icon: 'account-supervisor-outline', activeIcon: 'account-supervisor', path: '/(app)/admin/users', match: 'admin/users' },
   { label: 'Businesses', icon: 'store-outline', activeIcon: 'store', path: '/(app)/admin/tenants', match: 'admin/tenants' },
+  { label: 'Sessions', icon: 'shield-lock-outline', activeIcon: 'shield-lock', path: '/(app)/admin/sessions', match: 'admin/sessions' },
 ];
 
 function SidebarItem({ item, isActive, onPress }: { item: NavItem; isActive: boolean; onPress: () => void }) {

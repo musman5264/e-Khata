@@ -6,8 +6,36 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
+import SearchableDropdown, { DropdownItem } from '@/components/SearchableDropdown';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+
+/* Known dropdown options for specific setting keys */
+const SETTING_OPTIONS: Record<string, DropdownItem[]> = {
+  sms_provider: [
+    { label: 'None', value: 'none' },
+    { label: 'Twilio', value: 'twilio' },
+    { label: 'Local SMS Gateway', value: 'local' },
+  ],
+  email_provider: [
+    { label: 'SMTP', value: 'smtp' },
+    { label: 'Mailgun', value: 'mailgun' },
+    { label: 'Amazon SES', value: 'ses' },
+  ],
+  default_language: [
+    { label: 'English', value: 'en' },
+    { label: 'Urdu', value: 'ur' },
+  ],
+  default_currency: [
+    { label: 'PKR - Pakistani Rupee', value: 'PKR' },
+    { label: 'USD - US Dollar', value: 'USD' },
+    { label: 'INR - Indian Rupee', value: 'INR' },
+    { label: 'AED - UAE Dirham', value: 'AED' },
+    { label: 'GBP - British Pound', value: 'GBP' },
+    { label: 'EUR - Euro', value: 'EUR' },
+  ],
+};
 
 interface Setting {
   key: string;
@@ -114,6 +142,7 @@ export default function AdminSettingsScreen() {
 
   return (
     <View style={styles.outerContainer}>
+      <LoadingOverlay visible={mutation.isPending} message="Saving settings..." />
       {/* Tab Bar */}
       <View style={styles.tabBar}>
         {TABS.map((tab) => (
@@ -168,6 +197,21 @@ export default function AdminSettingsScreen() {
                         color={colors.primary}
                       />
                     </View>
+                  ) : SETTING_OPTIONS[setting.key] ? (
+                    <>
+                      <SearchableDropdown
+                        label={`${setting.label}${setting.is_mandatory ? ' *' : ''}`}
+                        items={SETTING_OPTIONS[setting.key]}
+                        value={form[setting.key] || ''}
+                        onSelect={(item) => updateField(setting.key, String(item.value))}
+                        placeholder={`Select ${setting.label}...`}
+                      />
+                      {setting.description && (
+                        <Text variant="bodySmall" style={[styles.description, { marginTop: -8 }]}>
+                          {setting.description}
+                        </Text>
+                      )}
+                    </>
                   ) : (
                     <>
                       <TextInput

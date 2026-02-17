@@ -167,6 +167,12 @@ Route::prefix('v1')->group(function () {
             Route::get('tenants/{id}', [SystemSettingsController::class, 'showTenant']);
             Route::put('tenants/{id}', [SystemSettingsController::class, 'updateTenant']);
             Route::delete('tenants/{id}', [SystemSettingsController::class, 'deleteTenant']);
+
+            // Admin Session management (Super Admin only)
+            Route::get('sessions', [SessionController::class, 'adminIndex']);
+            Route::get('sessions/{id}', [SessionController::class, 'adminShow']);
+            Route::get('sessions/{id}/activities', [SessionController::class, 'sessionActivities']);
+            Route::delete('sessions/{id}', [SessionController::class, 'adminDestroy']);
         });
     });
 });

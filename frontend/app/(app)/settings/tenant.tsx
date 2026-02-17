@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 export default function TenantSettingsScreen() {
   const { t } = useTranslation();
@@ -44,6 +45,7 @@ export default function TenantSettingsScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <LoadingOverlay visible={mutation.isPending} message="Saving settings..." />
       <TextInput label={t('settings.businessName')} value={form.name}
         onChangeText={(v) => setForm((p) => ({ ...p, name: v }))} mode="outlined" style={styles.input} />
       <TextInput label={t('settings.businessType')} value={form.business_type}

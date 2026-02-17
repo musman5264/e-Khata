@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatDate, formatDateTime } from '@/utils/formatDate';
 
 export default function TransactionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -61,13 +62,13 @@ export default function TransactionDetailScreen() {
         <Card.Content>
           <DetailRow label={t('party.name')} value={txn.party_name || `Party #${txn.party_id}`} />
           <Divider style={{ marginVertical: spacing.sm }} />
-          <DetailRow label={t('transaction.date')} value={txn.date} />
+          <DetailRow label={t('transaction.date')} value={formatDate(txn.date)} />
           <Divider style={{ marginVertical: spacing.sm }} />
           <DetailRow label={t('transaction.description')} value={txn.description || '—'} />
           <Divider style={{ marginVertical: spacing.sm }} />
           <DetailRow label={t('transaction.runningBalance')} value={formatCurrency(txn.running_balance)} />
           <Divider style={{ marginVertical: spacing.sm }} />
-          <DetailRow label={t('common.createdAt')} value={txn.created_at} />
+          <DetailRow label={t('common.createdAt')} value={formatDateTime(txn.created_at)} />
         </Card.Content>
       </Card>
 

@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatDate } from '@/utils/formatDate';
 
 export default function SharedLedgerScreen() {
   const { token } = useLocalSearchParams<{ token: string }>();
@@ -63,7 +64,7 @@ export default function SharedLedgerScreen() {
         <Card key={txn.id} style={styles.txnCard} mode="outlined">
           <Card.Content style={styles.txnContent}>
             <View style={{ flex: 1 }}>
-              <Text variant="bodySmall" style={{ color: colors.textHint }}>{txn.date}</Text>
+              <Text variant="bodySmall" style={{ color: colors.textHint }}>{formatDate(txn.date)}</Text>
               <Text variant="bodyMedium">{txn.description || '—'}</Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>

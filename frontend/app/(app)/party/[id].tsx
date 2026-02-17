@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatDate } from '@/utils/formatDate';
 import { usePermissions } from '@/hooks/usePermissions';
 
 function getInitials(name: string) {
@@ -78,7 +79,7 @@ export default function PartyDetailScreen() {
         <View style={shared.txnContent}>
           <View style={[shared.txnDot, { backgroundColor: item.type === 'debit' ? colors.debit : colors.credit }]} />
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={shared.txnDate}>{item.date}</Text>
+            <Text style={shared.txnDate}>{formatDate(item.date)}</Text>
             <Text style={shared.txnDesc}>{item.description || '—'}</Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>

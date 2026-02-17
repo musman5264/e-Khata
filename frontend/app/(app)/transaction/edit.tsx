@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 export default function EditTransactionScreen() {
   const { t } = useTranslation();
@@ -71,6 +72,7 @@ export default function EditTransactionScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <LoadingOverlay visible={mutation.isPending} message="Updating transaction..." />
       <SegmentedButtons
         value={form.type}
         onValueChange={(v) => updateField('type', v)}

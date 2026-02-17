@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth';
 import { colors, spacing } from '@/theme';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 export default function LoginScreen() {
   const { t } = useTranslation();
@@ -50,7 +51,6 @@ export default function LoginScreen() {
         onChangeText={setMobile}
         keyboardType="phone-pad"
         mode="outlined"
-        left={<TextInput.Affix text="+92" />}
         left={<TextInput.Icon icon="phone" />}
         outlineStyle={styles.inputOutline}
         style={styles.input}
@@ -100,6 +100,7 @@ export default function LoginScreen() {
   if (isWide) {
     return (
       <View style={styles.webContainer}>
+        <LoadingOverlay visible={isLoading} message="Signing in..." />
         {/* Left branding panel */}
         <View style={styles.webBranding}>
           <View style={styles.brandContent}>
@@ -136,6 +137,7 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <LoadingOverlay visible={isLoading} message="Signing in..." />
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <Text style={styles.logoEmoji}>📒</Text>

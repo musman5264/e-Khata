@@ -3,6 +3,7 @@ import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { colors, spacing } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatDate } from '@/utils/formatDate';
 
 interface TransactionRowProps {
   transaction: {
@@ -25,7 +26,7 @@ export default function TransactionRow({ transaction, onPress, showParty = false
     <TouchableOpacity onPress={onPress} style={styles.container} activeOpacity={0.7} disabled={!onPress}>
       <View style={[styles.typeIndicator, { backgroundColor: txn.type === 'debit' ? colors.debit : colors.credit }]} />
       <View style={styles.info}>
-        <Text variant="bodySmall" style={{ color: colors.textHint }}>{txn.date}</Text>
+        <Text variant="bodySmall" style={{ color: colors.textHint }}>{formatDate(txn.date)}</Text>
         {showParty && txn.party_name && (
           <Text variant="bodyMedium" style={{ fontWeight: '600' }}>{txn.party_name}</Text>
         )}

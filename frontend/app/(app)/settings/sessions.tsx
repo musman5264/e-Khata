@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
+import { formatDateTime, timeAgo } from '@/utils/formatDate';
 
 export default function SessionsSettingsScreen() {
   const { t } = useTranslation();
@@ -36,12 +37,6 @@ export default function SessionsSettingsScreen() {
     ]);
   };
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '—';
-    const d = new Date(dateStr);
-    return d.toLocaleString();
-  };
-
   return (
     <View style={styles.container}>
       <Button mode="outlined" onPress={handleRevokeAll} style={styles.revokeAllBtn}
@@ -67,7 +62,7 @@ export default function SessionsSettingsScreen() {
                   {item.os_name || item.platform || ''} {item.os_version || ''} • {item.ip_address}
                 </Text>
                 <Text variant="labelSmall" style={{ color: colors.textHint }}>
-                  {t('session.lastActive')}: {formatDate(item.last_active_at)}
+                  {t('session.lastActive')}: {timeAgo(item.last_active_at)}
                 </Text>
                 {item.is_current && (
                   <Chip compact style={styles.activeChip} textStyle={{ fontSize: 10, color: '#4CAF50' }}>
@@ -98,14 +93,17 @@ export default function SessionsSettingsScreen() {
             {selectedSession && (
               <>
                 <DetailRow label={t('session.device')} value={selectedSession.device_name || selectedSession.browser_name || '—'} />
+                <DetailRow label="Model" value={selectedSession.device_model || '—'} />
+                <DetailRow label="Brand" value={selectedSession.device_brand || '—'} />
                 <DetailRow label={t('session.platform')} value={`${selectedSession.os_name || ''} ${selectedSession.os_version || ''}`} />
                 <DetailRow label={t('session.browser')} value={selectedSession.browser_name || '—'} />
+                <DetailRow label="App Version" value={selectedSession.app_version || '—'} />
                 <DetailRow label={t('session.ipAddress')} value={selectedSession.ip_address || '—'} />
                 <DetailRow label={t('session.location')} value={
                   [selectedSession.geo_city, selectedSession.geo_country].filter(Boolean).join(', ') || selectedSession.location || '—'
                 } />
-                <DetailRow label={t('session.loginAt')} value={formatDate(selectedSession.login_at)} />
-                <DetailRow label={t('session.lastActive')} value={formatDate(selectedSession.last_active_at)} />
+                <DetailRow label={t('session.loginAt')} value={formatDateTime(selectedSession.login_at)} />
+                <DetailRow label={t('session.lastActive')} value={formatDateTime(selectedSession.last_active_at)} />
                 <DetailRow label={t('common.status')} value={selectedSession.is_current ? t('session.currentDevice') : t('session.active')} />
                 <Divider style={{ marginVertical: 12 }} />
                 {!selectedSession.is_current && (

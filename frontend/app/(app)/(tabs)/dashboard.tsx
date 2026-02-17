@@ -9,6 +9,7 @@ import api from '@/services/api';
 import { useAuthStore } from '@/stores/auth';
 import { colors, spacing } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatDate } from '@/utils/formatDate';
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -131,7 +132,7 @@ export default function DashboardScreen() {
               <View key={txn.id} style={webStyles.tableRow}>
                 <Text style={[webStyles.td, webStyles.tdBold, { flex: 2 }]}>{txn.party_name}</Text>
                 <Text style={[webStyles.td, { flex: 2 }]}>{txn.description || '—'}</Text>
-                <Text style={[webStyles.td, { flex: 1 }]}>{txn.date}</Text>
+                <Text style={[webStyles.td, { flex: 1 }]}>{formatDate(txn.date)}</Text>
                 <Text style={[webStyles.td, { flex: 1, textAlign: 'right', fontWeight: '700', color: txn.type === 'debit' ? colors.debit : colors.credit }]}>
                   {formatCurrency(txn.amount)}
                 </Text>
@@ -261,7 +262,7 @@ export default function DashboardScreen() {
               </View>
               <View style={{ flex: 1, marginLeft: 12 }}>
                 <Text style={mStyles.txnName}>{txn.party_name}</Text>
-                <Text style={mStyles.txnDesc}>{txn.description || txn.date}</Text>
+                <Text style={mStyles.txnDesc}>{txn.description || formatDate(txn.date)}</Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={[mStyles.txnAmt, { color: txn.type === 'debit' ? colors.debit : colors.credit }]}>

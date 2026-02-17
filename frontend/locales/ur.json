@@ -138,7 +138,9 @@
     "closingBalance": "حتمی بیلنس",
     "totals": "کل",
     "naam": "نام",
-    "jama": "جمع"
+    "jama": "جمع",
+    "addDebit": "نام شامل کریں",
+    "addCredit": "جمع شامل کریں"
   },
   "payment": {
     "title": "ادائیگیاں",

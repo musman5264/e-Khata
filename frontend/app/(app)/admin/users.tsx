@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
+import { formatDate } from '@/utils/formatDate';
 
 interface User {
   id: number;
@@ -163,7 +164,7 @@ export default function AdminUsersScreen() {
                 </View>
                 <View style={mS.detailGrid}>
                   <DetailItem icon="email-outline" label="Email" value={selectedUser.email || '—'} />
-                  <DetailItem icon="calendar" label="Joined" value={new Date(selectedUser.created_at).toLocaleDateString()} />
+                  <DetailItem icon="calendar" label="Joined" value={formatDate(selectedUser.created_at)} />
                   <DetailItem icon="shield-star" label="Roles" value={selectedUser.roles.map(r => r.name).join(', ') || '—'} />
                   <DetailItem icon="domain" label="Businesses" value={selectedUser.tenants.map(t => t.name).join(', ') || 'None'} />
                 </View>

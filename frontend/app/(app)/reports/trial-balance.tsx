@@ -25,13 +25,13 @@ export default function TrialBalanceScreen() {
         <Surface style={[styles.summaryCard, { backgroundColor: '#FFEBEE' }]}>
           <Text style={styles.summaryLabel}>{t('dashboard.receivable')}</Text>
           <Text style={[styles.summaryValue, { color: colors.debit }]}>
-            {formatCurrency(data?.total_debit ?? 0)}
+            {formatCurrency(data?.totals?.total_debit_balance ?? 0)}
           </Text>
         </Surface>
         <Surface style={[styles.summaryCard, { backgroundColor: '#E0F2F1' }]}>
           <Text style={styles.summaryLabel}>{t('dashboard.payable')}</Text>
           <Text style={[styles.summaryValue, { color: colors.credit }]}>
-            {formatCurrency(data?.total_credit ?? 0)}
+            {formatCurrency(data?.totals?.total_credit_balance ?? 0)}
           </Text>
         </Surface>
       </View>
@@ -49,18 +49,18 @@ export default function TrialBalanceScreen() {
           {data?.parties?.map((party: any) => (
             <DataTable.Row key={party.id}>
               <DataTable.Cell>{party.name}</DataTable.Cell>
-              <DataTable.Cell numeric style={{ color: colors.debit }}>
-                {formatCurrency(party.total_debit)}
+              <DataTable.Cell numeric>
+                <Text style={{ color: colors.debit }}>{formatCurrency(party.debit_balance)}</Text>
               </DataTable.Cell>
-              <DataTable.Cell numeric style={{ color: colors.credit }}>
-                {formatCurrency(party.total_credit)}
+              <DataTable.Cell numeric>
+                <Text style={{ color: colors.credit }}>{formatCurrency(party.credit_balance)}</Text>
               </DataTable.Cell>
               <DataTable.Cell numeric>
                 <Text style={{
-                  color: party.balance > 0 ? colors.debit : party.balance < 0 ? colors.credit : colors.neutral,
+                  color: party.net_balance > 0 ? colors.debit : party.net_balance < 0 ? colors.credit : colors.neutral,
                   fontWeight: 'bold',
                 }}>
-                  {formatCurrency(Math.abs(party.balance))}
+                  {formatCurrency(Math.abs(party.net_balance ?? 0))}
                 </Text>
               </DataTable.Cell>
             </DataTable.Row>
@@ -69,13 +69,13 @@ export default function TrialBalanceScreen() {
           <DataTable.Row style={{ backgroundColor: colors.surface }}>
             <DataTable.Cell><Text style={{ fontWeight: 'bold' }}>{t('common.total')}</Text></DataTable.Cell>
             <DataTable.Cell numeric>
-              <Text style={{ fontWeight: 'bold', color: colors.debit }}>{formatCurrency(data?.total_debit ?? 0)}</Text>
+              <Text style={{ fontWeight: 'bold', color: colors.debit }}>{formatCurrency(data?.totals?.total_debit_balance ?? 0)}</Text>
             </DataTable.Cell>
             <DataTable.Cell numeric>
-              <Text style={{ fontWeight: 'bold', color: colors.credit }}>{formatCurrency(data?.total_credit ?? 0)}</Text>
+              <Text style={{ fontWeight: 'bold', color: colors.credit }}>{formatCurrency(data?.totals?.total_credit_balance ?? 0)}</Text>
             </DataTable.Cell>
             <DataTable.Cell numeric>
-              <Text style={{ fontWeight: 'bold' }}>{formatCurrency(data?.net_balance ?? 0)}</Text>
+              <Text style={{ fontWeight: 'bold' }}>{formatCurrency(data?.totals?.net_balance ?? 0)}</Text>
             </DataTable.Cell>
           </DataTable.Row>
         </DataTable>

@@ -138,7 +138,9 @@
     "closingBalance": "Closing Balance",
     "totals": "Totals",
     "naam": "NAAM",
-    "jama": "JAMA"
+    "jama": "JAMA",
+    "addDebit": "Add Debit (Naam)",
+    "addCredit": "Add Credit (Jama)"
   },
   "payment": {
     "title": "Payments",

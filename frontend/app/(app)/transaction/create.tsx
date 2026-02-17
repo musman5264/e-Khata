@@ -3,9 +3,11 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { TextInput, Button, SegmentedButtons, Text, Surface } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
+import SearchableDropdown from '@/components/SearchableDropdown';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 export default function CreateTransactionScreen() {
   const { t } = useTranslation();
@@ -22,6 +24,22 @@ export default function CreateTransactionScreen() {
     attachment_url: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Fetch parties for searchable dropdown
+  const { data: partiesData } = useQuery({
+    queryKey: ['parties'],
+    queryFn: async () => {
+      const res = await api.get('/parties');
+      return res.data.data;
+    },
+    enabled: !params.party_id, // Only fetch if no pre-selected party
+  });
+
+  const partyItems = (partiesData || []).map((p: any) => ({
+    label: p.name,
+    value: String(p.id),
+    subtitle: p.mobile || p.email || undefined,
+  }));
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
@@ -58,6 +76,7 @@ export default function CreateTransactionScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <LoadingOverlay visible={mutation.isPending} message="Saving transaction..." />
       {/* Transaction Type */}
       <Text variant="labelLarge" style={styles.label}>{t('transaction.type')}</Text>
       <SegmentedButtons
@@ -94,19 +113,17 @@ export default function CreateTransactionScreen() {
       </Surface>
       {errors.amount && <Text style={styles.error}>{errors.amount}</Text>}
 
-      {/* Party ID - if not pre-selected */}
+      {/* Party Selection - searchable dropdown */}
       {!params.party_id && (
         <>
-          <TextInput
-            label={t('transaction.partyId')}
+          <SearchableDropdown
+            label={t('party.name')}
+            items={partyItems}
             value={form.party_id}
-            onChangeText={(v) => updateField('party_id', v)}
-            keyboardType="numeric"
-            error={!!errors.party_id}
-            mode="outlined"
-            style={styles.input}
+            onSelect={(item) => updateField('party_id', String(item.value))}
+            placeholder="Search party by name or mobile..."
+            error={errors.party_id}
           />
-          {errors.party_id && <Text style={styles.error}>{errors.party_id}</Text>}
         </>
       )}
 

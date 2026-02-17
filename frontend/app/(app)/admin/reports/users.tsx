@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
+import { formatDate } from '@/utils/formatDate';
 
 export default function AdminUserReport() {
   const { t } = useTranslation();
@@ -52,7 +53,7 @@ export default function AdminUserReport() {
                 {(u.roles ?? []).map((r: any) => r.name).join(', ') || '-'}
               </DataTable.Cell>
               <DataTable.Cell numeric>{u.businesses_count ?? 0}</DataTable.Cell>
-              <DataTable.Cell>{u.last_login ? new Date(u.last_login).toLocaleDateString() : '-'}</DataTable.Cell>
+              <DataTable.Cell>{u.last_login ? formatDate(u.last_login) : '—'}</DataTable.Cell>
             </DataTable.Row>
           ))}
           {users.length === 0 && (

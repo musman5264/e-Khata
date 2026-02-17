@@ -55,6 +55,7 @@ export default function MoreScreen() {
     { title: 'System Settings', icon: 'cog-outline', iconBg: '#E0F2F1', iconColor: '#00897B', route: '/(app)/admin/settings' },
     { title: 'Manage Users', icon: 'account-supervisor-outline', iconBg: '#E3F2FD', iconColor: '#1976D2', route: '/(app)/admin/users' },
     { title: 'Manage Businesses', icon: 'store-outline', iconBg: '#FFF3E0', iconColor: '#EF6C00', route: '/(app)/admin/tenants' },
+    { title: 'All Sessions', icon: 'shield-lock-outline', iconBg: '#FCE4EC', iconColor: '#AD1457', route: '/(app)/admin/sessions' },
   ];
 
   const initials = user?.name ? user.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) : 'U';
