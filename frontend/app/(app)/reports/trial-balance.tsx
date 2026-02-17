@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
-import { formatCurrency } from '@/utils/formatCurrency';
+import { formatCurrency, formatCurrencyUrdu } from '@/utils/formatCurrency';
 import ReportActions from '@/components/ReportActions';
 import DateInput from '@/components/DateInput';
 
@@ -53,12 +53,14 @@ export default function TrialBalanceScreen() {
           <Text style={[styles.summaryValue, { color: colors.debit }]}>
             {formatCurrency(data?.totals?.total_debit_balance ?? 0)}
           </Text>
+          <Text style={styles.urduAmt}>{formatCurrencyUrdu(data?.totals?.total_debit_balance ?? 0)}</Text>
         </Surface>
         <Surface style={[styles.summaryCard, { backgroundColor: '#E0F2F1' }]}>
           <Text style={styles.summaryLabel}>{t('dashboard.payable')}</Text>
           <Text style={[styles.summaryValue, { color: colors.credit }]}>
             {formatCurrency(data?.totals?.total_credit_balance ?? 0)}
           </Text>
+          <Text style={styles.urduAmt}>{formatCurrencyUrdu(data?.totals?.total_credit_balance ?? 0)}</Text>
         </Surface>
       </View>
 
@@ -118,6 +120,7 @@ const styles = StyleSheet.create({
   summaryCard: { flex: 1, padding: spacing.md, borderRadius: 12, elevation: 2, alignItems: 'center' },
   summaryLabel: { fontSize: 11, color: colors.textSecondary },
   summaryValue: { fontSize: 18, fontWeight: 'bold', marginTop: 2 },
+  urduAmt: { fontSize: 10, color: '#8A8FA8', marginTop: 1, fontFamily: 'serif' },
   tableCard: { borderRadius: 12 },
   filterCard: { padding: spacing.base, borderRadius: 12, marginBottom: spacing.base, elevation: 1 },
   filterRow: { flexDirection: 'row', gap: spacing.md },

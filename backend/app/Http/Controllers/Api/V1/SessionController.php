@@ -25,7 +25,7 @@ class SessionController extends Controller
     public function index(Request $request): JsonResponse
     {
         $sessions = Session::where('user_id', $request->user()->id)
-            ->where('is_active', true)
+            ->orderByDesc('is_active')
             ->orderByDesc('last_active_at')
             ->get()
             ->map(fn($session) => [
@@ -43,6 +43,8 @@ class SessionController extends Controller
                 'geo_city' => $session->geo_city,
                 'last_active_at' => $session->last_active_at,
                 'login_at' => $session->login_at,
+                'logout_at' => $session->logout_at,
+                'is_active' => $session->is_active,
                 'is_current' => $session->token_id === $request->user()->currentAccessToken()?->id,
             ]);
 

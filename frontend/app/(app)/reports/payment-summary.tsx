@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { Text, Surface, DataTable, ActivityIndicator, Chip, Modal, Portal, IconButton, Divider } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
-import { formatCurrency } from '@/utils/formatCurrency';
+import { formatCurrency, formatCurrencyUrdu } from '@/utils/formatCurrency';
 import { formatDate, formatDateTime } from '@/utils/formatDate';
 import ReportActions from '@/components/ReportActions';
 import DateInput from '@/components/DateInput';
 
 export default function PaymentSummaryScreen() {
   const { t } = useTranslation();
+  const { width } = useWindowDimensions();
+  const isWide = width > 700;
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [dateFrom, setDateFrom] = useState('');
@@ -66,64 +68,73 @@ export default function PaymentSummaryScreen() {
       </Surface>
 
       <View nativeID="printable-report">
-      <View style={styles.statsRow}>
-        <Surface style={styles.statCard}>
+      {/* Summary Cards */}
+      <View style={[styles.statsRow, !isWide && { flexDirection: 'column' }]}>
+        <Surface style={[styles.statCard, { borderLeftColor: colors.credit, borderLeftWidth: 4 }]}>
           <Text style={styles.statLabel}>{t('payment.collect')}</Text>
           <Text style={[styles.statValue, { color: colors.credit }]}>
             {formatCurrency(data?.summary?.total_collected ?? 0)}
           </Text>
+          <Text style={styles.urduAmt}>{formatCurrencyUrdu(data?.summary?.total_collected ?? 0)}</Text>
         </Surface>
-        <Surface style={styles.statCard}>
+        <Surface style={[styles.statCard, { borderLeftColor: colors.debit, borderLeftWidth: 4 }]}>
           <Text style={styles.statLabel}>{t('payment.send')}</Text>
           <Text style={[styles.statValue, { color: colors.debit }]}>
             {formatCurrency(data?.summary?.total_sent ?? 0)}
           </Text>
+          <Text style={styles.urduAmt}>{formatCurrencyUrdu(data?.summary?.total_sent ?? 0)}</Text>
         </Surface>
-        <Surface style={styles.statCard}>
+        <Surface style={[styles.statCard, { borderLeftColor: colors.warning, borderLeftWidth: 4 }]}>
           <Text style={styles.statLabel}>{t('payment.pending')}</Text>
           <Text style={[styles.statValue, { color: colors.warning }]}>
             {formatCurrency(data?.summary?.total_pending ?? 0)}
           </Text>
+          <Text style={styles.urduAmt}>{formatCurrencyUrdu(data?.summary?.total_pending ?? 0)}</Text>
         </Surface>
       </View>
 
+      {/* Payments Table */}
       <Surface style={styles.tableCard}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <DataTable style={{ minWidth: 600 }}>
-            <DataTable.Header>
-              <DataTable.Title style={{ flex: 1, minWidth: 80 }}>{t('common.type')}</DataTable.Title>
-              <DataTable.Title style={{ flex: 1.2, minWidth: 100 }}>{t('payment.gateway')}</DataTable.Title>
-              <DataTable.Title numeric style={{ flex: 1.2, minWidth: 110 }}>{t('common.amount')}</DataTable.Title>
-              <DataTable.Title style={{ flex: 1, minWidth: 90 }}>{t('common.status')}</DataTable.Title>
-              <DataTable.Title style={{ flex: 1.2, minWidth: 100 }}>{t('common.date')}</DataTable.Title>
+        <ScrollView horizontal={!isWide} showsHorizontalScrollIndicator={false}>
+          <DataTable style={{ minWidth: isWide ? undefined : 650 }}>
+            <DataTable.Header style={styles.tableHeader}>
+              <DataTable.Title style={{ flex: 1.3 }}><Text style={styles.thText}>{t('common.type')}</Text></DataTable.Title>
+              <DataTable.Title style={{ flex: 1.2 }}><Text style={styles.thText}>{t('payment.gateway')}</Text></DataTable.Title>
+              <DataTable.Title numeric style={{ flex: 1.5 }}><Text style={styles.thText}>{t('common.amount')}</Text></DataTable.Title>
+              <DataTable.Title style={{ flex: 1 }}><Text style={styles.thText}>{t('common.status')}</Text></DataTable.Title>
+              <DataTable.Title style={{ flex: 1.2 }}><Text style={styles.thText}>{t('common.date')}</Text></DataTable.Title>
             </DataTable.Header>
 
             {data?.payments?.map((p: any) => (
-              <DataTable.Row key={p.id} onPress={() => openDetail(p)} style={{ cursor: 'pointer' }}>
-                <DataTable.Cell style={{ flex: 1, minWidth: 80 }}>
-                  <Text style={{
-                    fontSize: 12,
-                    fontWeight: '600',
-                    color: p.type === 'collect' ? colors.credit : colors.debit,
-                  }}>
-                    {p.type === 'collect' ? t('payment.collect') : t('payment.send')}
-                  </Text>
+              <DataTable.Row key={p.id} onPress={() => openDetail(p)} style={styles.tableRow}>
+                <DataTable.Cell style={{ flex: 1.3 }}>
+                  <View style={[styles.typeBadge, {
+                    backgroundColor: p.type === 'collect' ? '#E8F5E9' : '#FFF3E0',
+                  }]}>
+                    <Text style={{
+                      fontSize: 11,
+                      fontWeight: '700',
+                      color: p.type === 'collect' ? colors.credit : colors.debit,
+                    }}>
+                      {p.type === 'collect' ? t('payment.collect') : t('payment.send')}
+                    </Text>
+                  </View>
                 </DataTable.Cell>
-                <DataTable.Cell style={{ flex: 1.2, minWidth: 100 }}>
-                  <Text style={{ fontSize: 12, textTransform: 'capitalize' }}>{p.gateway}</Text>
+                <DataTable.Cell style={{ flex: 1.2 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '500', textTransform: 'capitalize' }}>{p.gateway}</Text>
                 </DataTable.Cell>
-                <DataTable.Cell numeric style={{ flex: 1.2, minWidth: 110 }}>
-                  <Text style={{ fontWeight: 'bold', fontSize: 13 }}>{formatCurrency(p.amount)}</Text>
+                <DataTable.Cell numeric style={{ flex: 1.5 }}>
+                  <Text style={{ fontWeight: '700', fontSize: 13, color: colors.text }}>{formatCurrency(p.amount)}</Text>
                 </DataTable.Cell>
-                <DataTable.Cell style={{ flex: 1, minWidth: 90 }}>
-                  <View style={[styles.statusBadge, { backgroundColor: statusColor(p.status) + '20' }]}>
-                    <Text style={{ color: statusColor(p.status), fontWeight: '600', fontSize: 11 }}>
+                <DataTable.Cell style={{ flex: 1 }}>
+                  <View style={[styles.statusBadge, { backgroundColor: statusColor(p.status) + '18' }]}>
+                    <Text style={{ color: statusColor(p.status), fontWeight: '700', fontSize: 11 }}>
                       {p.status}
                     </Text>
                   </View>
                 </DataTable.Cell>
-                <DataTable.Cell style={{ flex: 1.2, minWidth: 100 }}>
-                  <Text style={{ fontSize: 12 }}>{formatDate(p.created_at)}</Text>
+                <DataTable.Cell style={{ flex: 1.2 }}>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>{formatDate(p.created_at)}</Text>
                 </DataTable.Cell>
               </DataTable.Row>
             ))}
@@ -163,6 +174,9 @@ export default function PaymentSummaryScreen() {
                     color: selectedPayment.type === 'collect' ? colors.credit : colors.debit,
                   }]}>
                     {formatCurrency(selectedPayment.amount)}
+                  </Text>
+                  <Text style={[styles.urduAmt, { fontSize: 13, marginTop: 4 }]}>
+                    {formatCurrencyUrdu(selectedPayment.amount)}
                   </Text>
                 </View>
 
@@ -215,14 +229,30 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontWeight: '700', marginBottom: spacing.lg },
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: spacing.base },
-  statCard: { flex: 1, padding: spacing.md, borderRadius: 12, elevation: 1, alignItems: 'center', backgroundColor: '#fff' },
-  statLabel: { fontSize: 11, color: colors.textSecondary },
-  statValue: { fontSize: 18, fontWeight: 'bold', marginTop: 4 },
-  tableCard: { borderRadius: 12, elevation: 1 },
+  statCard: {
+    flex: 1,
+    padding: spacing.md,
+    borderRadius: 12,
+    elevation: 2,
+    backgroundColor: '#fff',
+    paddingLeft: spacing.base,
+  },
+  statLabel: { fontSize: 12, color: colors.textSecondary, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  statValue: { fontSize: 20, fontWeight: 'bold', marginTop: 4 },
+  urduAmt: { fontSize: 11, color: '#8A8FA8', marginTop: 2, fontFamily: 'serif' },
+  tableCard: { borderRadius: 14, elevation: 2, backgroundColor: '#fff', overflow: 'hidden' },
+  tableHeader: { backgroundColor: '#F5F7FF' },
+  thText: { fontWeight: '700', fontSize: 12, color: '#333' },
+  tableRow: { borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  typeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
   statusBadge: {
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
+    paddingVertical: 3,
+    borderRadius: 10,
   },
   modalContainer: {
     backgroundColor: '#fff',

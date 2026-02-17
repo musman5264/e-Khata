@@ -27,11 +27,34 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
           position: static !important;
           width: 100% !important;
           background: #fff !important;
-          padding: 10mm !important;
+          padding: 8mm !important;
+          margin: 0 !important;
         }
 
         body > #ekhata-print-container * {
           visibility: visible !important;
+          overflow: visible !important;
+        }
+
+        /* Force table rows to stay together */
+        body > #ekhata-print-container table,
+        body > #ekhata-print-container div[role="table"] {
+          page-break-inside: auto !important;
+          width: 100% !important;
+        }
+
+        body > #ekhata-print-container tr,
+        body > #ekhata-print-container div[role="row"] {
+          page-break-inside: avoid !important;
+        }
+
+        /* Ensure content fits A4 width */
+        body > #ekhata-print-container div[style*="min-width"] {
+          min-width: unset !important;
+        }
+
+        /* Scale down horizontally scrolling containers */
+        body > #ekhata-print-container [style*="overflow"] {
           overflow: visible !important;
         }
 
@@ -43,7 +66,7 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
         }
 
         @page {
-          margin: 10mm;
+          margin: 8mm;
           size: A4 portrait;
         }
       }
@@ -85,31 +108,58 @@ export default function ReportActions({
   const handlePrint = () => {
     if (onPrint) return onPrint();
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
-      // Clone the printable content and inject into body as a sibling of #root
+      // Always remove any previous print container first
+      const existing = document.getElementById('ekhata-print-container');
+      if (existing) existing.remove();
+
+      // Get the CURRENT printable content from the live DOM
       const source = document.getElementById('printable-report');
       if (!source) {
         window.print();
         return;
       }
 
-      // Remove any previous print container
-      const existing = document.getElementById('ekhata-print-container');
-      if (existing) existing.remove();
-
-      // Create print container with cloned content
+      // Create print container with FRESH cloned content
       const container = document.createElement('div');
       container.id = 'ekhata-print-container';
-      container.appendChild(source.cloneNode(true));
+
+      // Add a print header with report title
+      if (reportTitle) {
+        const header = document.createElement('div');
+        header.style.cssText = 'text-align:center;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #333;';
+        header.innerHTML = `<h2 style="margin:0;font-size:18px;font-weight:700;">${reportTitle.replace(/_/g, ' ')}</h2>
+          <p style="margin:4px 0 0;font-size:11px;color:#666;">Generated: ${new Date().toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' })}</p>`;
+        container.appendChild(header);
+      }
+
+      // Clone and clean the content
+      const clone = source.cloneNode(true) as HTMLElement;
+      // Remove any min-width constraints that cause horizontal overflow
+      clone.style.width = '100%';
+      clone.style.maxWidth = '100%';
+      clone.style.overflow = 'visible';
+      // Remove horizontal scroll wrappers
+      const scrollWrappers = clone.querySelectorAll('[style*="overflow"]');
+      scrollWrappers.forEach((el) => {
+        (el as HTMLElement).style.overflow = 'visible';
+      });
+      // Reset min-widths on table elements
+      const minWidthEls = clone.querySelectorAll('[style*="min-width"]');
+      minWidthEls.forEach((el) => {
+        (el as HTMLElement).style.minWidth = 'unset';
+      });
+
+      container.appendChild(clone);
       document.body.appendChild(container);
 
-      // Print, then clean up
+      // Print, then clean up immediately after
       window.print();
 
-      // Clean up after a brief delay (some browsers need it)
+      // Clean up after print dialog closes
       setTimeout(() => {
         const el = document.getElementById('ekhata-print-container');
         if (el) el.remove();
-      }, 1000);
+      }, 500);
     }
   };
 
@@ -578,9 +628,14 @@ export default function ReportActions({
  * Find the report content element in the DOM for PDF export.
  * Priority: #printable-report → contentSelector → main content area → body
  * IMPORTANT: Always returns a FRESH clone to prevent stale element caching.
+ * Also removes any previous stale print containers first.
  */
 function findReportElement(contentSelector?: string): HTMLElement | null {
   if (typeof document === 'undefined') return null;
+
+  // Always clean up any previous stale print containers
+  const stale = document.getElementById('ekhata-print-container');
+  if (stale) stale.remove();
 
   let source: HTMLElement | null = null;
 
@@ -610,9 +665,11 @@ function findReportElement(contentSelector?: string): HTMLElement | null {
 
   if (!source) source = document.body;
 
-  // Clone to prevent stale references between navigations
+  // Clone to prevent stale references and clean for export
   const clone = source.cloneNode(true) as HTMLElement;
-  clone.style.width = source.offsetWidth + 'px';
+  clone.style.width = '100%';
+  clone.style.maxWidth = '100%';
+  clone.style.overflow = 'visible';
   return clone;
 }
 

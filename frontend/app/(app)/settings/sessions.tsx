@@ -51,10 +51,10 @@ export default function SessionsSettingsScreen() {
         refreshing={isLoading}
         onRefresh={refetch}
         renderItem={({ item }: { item: any }) => (
-          <Card style={styles.card} mode="outlined" onPress={() => setSelectedSession(item)}>
+          <Card style={[styles.card, !item.is_active && styles.inactiveCard]} mode="outlined" onPress={() => setSelectedSession(item)}>
             <Card.Content style={styles.cardContent}>
               <View style={{ flex: 1 }}>
-                <Text variant="bodyMedium" style={{ fontWeight: '600' }}>
+                <Text variant="bodyMedium" style={{ fontWeight: '600', color: item.is_active ? colors.text : colors.textHint }}>
                   {item.device_name || item.browser_name || t('session.device')}
                   {item.is_current ? ` (${t('session.currentDevice')})` : ''}
                 </Text>
@@ -64,7 +64,15 @@ export default function SessionsSettingsScreen() {
                 <Text variant="labelSmall" style={{ color: colors.textHint }}>
                   {t('session.lastActive')}: {timeAgo(item.last_active_at)}
                 </Text>
-                {item.is_current && (
+                {item.is_current ? (
+                  <Chip compact style={styles.activeChip} textStyle={{ fontSize: 10, color: '#4CAF50' }}>
+                    {t('session.active')}
+                  </Chip>
+                ) : !item.is_active ? (
+                  <Chip compact style={styles.inactiveChip} textStyle={{ fontSize: 10, color: '#9E9E9E' }}>
+                    Inactive
+                  </Chip>
+                ) : (
                   <Chip compact style={styles.activeChip} textStyle={{ fontSize: 10, color: '#4CAF50' }}>
                     {t('session.active')}
                   </Chip>
@@ -104,7 +112,13 @@ export default function SessionsSettingsScreen() {
                 } />
                 <DetailRow label={t('session.loginAt')} value={formatDateTime(selectedSession.login_at)} />
                 <DetailRow label={t('session.lastActive')} value={formatDateTime(selectedSession.last_active_at)} />
-                <DetailRow label={t('common.status')} value={selectedSession.is_current ? t('session.currentDevice') : t('session.active')} />
+                <DetailRow label={t('common.status')} value={
+                  selectedSession.is_current ? t('session.currentDevice') :
+                  selectedSession.is_active ? t('session.active') : 'Inactive'
+                } />
+                {selectedSession.logout_at && (
+                  <DetailRow label="Logged Out" value={formatDateTime(selectedSession.logout_at)} />
+                )}
                 <Divider style={{ marginVertical: 12 }} />
                 {!selectedSession.is_current && (
                   <Button mode="contained" onPress={() => {
@@ -140,8 +154,10 @@ const styles = StyleSheet.create({
   revokeAllBtn: { margin: spacing.base, borderColor: colors.error, borderRadius: 8 },
   list: { paddingHorizontal: spacing.base, paddingBottom: 20 },
   card: { marginBottom: spacing.sm, borderRadius: 10 },
+  inactiveCard: { opacity: 0.65, borderColor: '#E0E0E0' },
   cardContent: { flexDirection: 'row', alignItems: 'center' },
   activeChip: { marginTop: 4, alignSelf: 'flex-start', backgroundColor: '#E8F5E9', borderRadius: 8 },
+  inactiveChip: { marginTop: 4, alignSelf: 'flex-start', backgroundColor: '#F5F5F5', borderRadius: 8 },
   emptyText: { textAlign: 'center', color: colors.textHint, marginTop: spacing.xxl },
   modalContent: {
     backgroundColor: '#fff', margin: 20, padding: 24, borderRadius: 16,

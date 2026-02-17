@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
-import { formatCurrency } from '@/utils/formatCurrency';
+import { formatCurrency, formatCurrencyUrdu } from '@/utils/formatCurrency';
 import { formatDate } from '@/utils/formatDate';
 import ReportActions from '@/components/ReportActions';
 import DateInput from '@/components/DateInput';
@@ -57,6 +57,7 @@ export default function PayableAgingScreen() {
           <Text style={[styles.summaryValue, { color: colors.credit }]}>
             {formatCurrency(data?.total ?? 0)}
           </Text>
+          <Text style={styles.urduAmt}>{formatCurrencyUrdu(data?.total ?? 0)}</Text>
           <Text style={styles.summaryCount}>{data?.count ?? 0} {t('dashboard.parties')}</Text>
         </Surface>
       </View>
@@ -103,6 +104,7 @@ const styles = StyleSheet.create({
   summaryCard: { padding: spacing.base, borderRadius: 12, elevation: 2, alignItems: 'center' },
   summaryLabel: { fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
   summaryValue: { fontSize: 24, fontWeight: 'bold', marginTop: 4 },
+  urduAmt: { fontSize: 11, color: '#8A8FA8', marginTop: 2, fontFamily: 'serif' },
   summaryCount: { fontSize: 11, color: colors.textHint, marginTop: 2 },
   tableCard: { borderRadius: 12, elevation: 1 },
   filterCard: { padding: spacing.base, borderRadius: 12, marginBottom: spacing.base, elevation: 1 },
