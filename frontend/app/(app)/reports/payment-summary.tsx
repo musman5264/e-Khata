@@ -8,16 +8,22 @@ import { colors, spacing } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate, formatDateTime } from '@/utils/formatDate';
 import ReportActions from '@/components/ReportActions';
+import DateInput from '@/components/DateInput';
 
 export default function PaymentSummaryScreen() {
   const { t } = useTranslation();
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [detailVisible, setDetailVisible] = useState(false);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['payment-summary'],
+    queryKey: ['payment-summary', dateFrom, dateTo],
     queryFn: async () => {
-      const res = await api.get('/reports/payment-summary');
+      const params: any = {};
+      if (dateFrom) params.date_from = dateFrom;
+      if (dateTo) params.date_to = dateTo;
+      const res = await api.get('/reports/payment-summary', { params });
       return res.data.data;
     },
   });
@@ -46,6 +52,18 @@ export default function PaymentSummaryScreen() {
         <Text variant="headlineSmall" style={{ fontWeight: '700' }}>{t('report.paymentReport')}</Text>
         {data?.payments?.length > 0 && <ReportActions reportTitle="Payment_Summary" />}
       </View>
+
+      {/* Date Filters */}
+      <Surface style={styles.filterCard} nativeID="report-filter-card">
+        <View style={styles.filterRow}>
+          <View style={{ flex: 1, minWidth: 130 }}>
+            <DateInput label="From Date" value={dateFrom} onChangeText={setDateFrom} />
+          </View>
+          <View style={{ flex: 1, minWidth: 130 }}>
+            <DateInput label="To Date" value={dateTo} onChangeText={setDateTo} />
+          </View>
+        </View>
+      </Surface>
 
       <View nativeID="printable-report">
       <View style={styles.statsRow}>
@@ -261,4 +279,6 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
   },
+  filterCard: { padding: spacing.base, borderRadius: 12, marginBottom: spacing.base, elevation: 1 },
+  filterRow: { flexDirection: 'row', gap: spacing.md },
 });

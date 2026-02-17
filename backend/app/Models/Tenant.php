@@ -91,4 +91,23 @@ class Tenant extends Model
     {
         return $this->hasMany(TenantInvitation::class);
     }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function activeSubscription(): ?\App\Models\Subscription
+    {
+        return $this->subscriptions()
+            ->whereIn('status', ['active', 'trial'])
+            ->where('ends_at', '>', now())
+            ->orderByDesc('ends_at')
+            ->first();
+    }
+
+    public function hasActiveSubscription(): bool
+    {
+        return $this->activeSubscription() !== null;
+    }
 }

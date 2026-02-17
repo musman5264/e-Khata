@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { Platform, View, useWindowDimensions } from 'react-native';
 import WebSidebar from '@/components/WebSidebar';
 import ImpersonationBanner from '@/components/ImpersonationBanner';
+import SubscriptionBanner from '@/components/SubscriptionBanner';
 import { colors } from '@/theme';
 
 export default function AppLayout() {
@@ -26,6 +27,7 @@ export default function AppLayout() {
       <Stack.Screen name="notifications" options={{ headerShown: !isWebWide, title: 'Notifications' }} />
       <Stack.Screen name="logs" />
       <Stack.Screen name="admin" />
+      <Stack.Screen name="subscription" />
     </Stack>
   );
 
@@ -35,6 +37,7 @@ export default function AppLayout() {
         <WebSidebar />
         <View style={{ flex: 1 }}>
           <ImpersonationBanner />
+          <SubscriptionBanner />
           {stack}
         </View>
       </View>
@@ -44,6 +47,7 @@ export default function AppLayout() {
   return (
     <View style={{ flex: 1 }}>
       <ImpersonationBanner />
+      <SubscriptionBanner />
       {stack}
     </View>
   );

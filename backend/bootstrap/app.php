@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'track.session' => \App\Http\Middleware\TrackSession::class,
             'log.api' => \App\Http\Middleware\LogApiRequest::class,
             'detect.suspicious' => \App\Http\Middleware\DetectSuspiciousLogin::class,
+            'subscription' => \App\Http\Middleware\EnsureActiveSubscription::class,
         ]);
 
         // Sanctum stateful domains (for SPA/web if needed)

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
-import { Text, Surface, ActivityIndicator, Button, TextInput, DataTable, Divider, Chip } from 'react-native-paper';
+import { Text, Surface, ActivityIndicator, Button, DataTable, Divider, Chip } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
@@ -8,6 +8,7 @@ import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import SearchableDropdown from '@/components/SearchableDropdown';
 import ReportActions from '@/components/ReportActions';
+import DateInput from '@/components/DateInput';
 import { formatDate } from '@/utils/formatDate';
 
 export default function PartyStatementScreen() {
@@ -76,12 +77,10 @@ export default function PartyStatementScreen() {
             />
           </View>
           <View style={{ flex: 1, minWidth: 130 }}>
-            <Text variant="labelMedium" style={styles.filterLabel}>From</Text>
-            <TextInput mode="outlined" value={dateFrom} onChangeText={setDateFrom} placeholder="YYYY-MM-DD" dense style={styles.dateInput} />
+            <DateInput label="From" value={dateFrom} onChangeText={setDateFrom} />
           </View>
           <View style={{ flex: 1, minWidth: 130 }}>
-            <Text variant="labelMedium" style={styles.filterLabel}>To</Text>
-            <TextInput mode="outlined" value={dateTo} onChangeText={setDateTo} placeholder="YYYY-MM-DD" dense style={styles.dateInput} />
+            <DateInput label="To" value={dateTo} onChangeText={setDateTo} />
           </View>
           <View style={{ justifyContent: 'flex-end' }}>
             <Button mode="contained" onPress={() => refetch()} disabled={!selectedPartyId} style={{ borderRadius: 8, marginTop: isWide ? 0 : 8 }} icon="file-eye">

@@ -48,13 +48,17 @@ api.interceptors.request.use(
 let isRehydrating = false;
 export function setRehydrating(v: boolean) { isRehydrating = v; }
 
-// Response interceptor — handle 401
+// Response interceptor — handle 401 and 403 subscription_required
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401 && !isRehydrating) {
       await removeToken();
       // The auth store will handle navigation
+    }
+    // Handle subscription required error (403) — enrich error message
+    if (error.response?.status === 403 && error.response?.data?.error === 'subscription_required') {
+      error.message = error.response.data.message || 'Active subscription required. Please subscribe to continue.';
     }
     return Promise.reject(error);
   }

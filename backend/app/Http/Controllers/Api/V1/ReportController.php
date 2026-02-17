@@ -167,12 +167,24 @@ class ReportController extends Controller
     public function trialBalance(Request $request): JsonResponse
     {
         $this->authorize('view_reports');
+        $dateFrom = $request->date_from;
+        $dateTo = $request->date_to;
 
         $parties = Party::where('is_active', true)
             ->orderBy('name')
             ->get()
-            ->map(function ($party) {
-                $balance = $party->current_balance;
+            ->map(function ($party) use ($dateFrom, $dateTo) {
+                if ($dateFrom || $dateTo) {
+                    // Compute balance from transactions within the date range
+                    $query = $party->transactions()->whereNull('deleted_at');
+                    if ($dateFrom) $query->where('date', '>=', $dateFrom);
+                    if ($dateTo) $query->where('date', '<=', $dateTo);
+                    $debit = (float) $query->clone()->where('type', 'debit')->sum('amount');
+                    $credit = (float) $query->clone()->where('type', 'credit')->sum('amount');
+                    $balance = $debit - $credit;
+                } else {
+                    $balance = $party->current_balance;
+                }
                 return [
                     'id' => $party->id,
                     'name' => $party->name,
@@ -382,19 +394,33 @@ class ReportController extends Controller
      * GET /api/v1/reports/receivable-aging
      * Parties who owe money (debit balance > 0).
      */
-    public function receivableAging(): JsonResponse
+    public function receivableAging(Request $request): JsonResponse
     {
         $this->authorize('view_reports');
+        $dateFrom = $request->date_from;
+        $dateTo = $request->date_to;
 
         $parties = Party::where('is_active', true)->orderBy('name')->get()
-            ->filter(fn($p) => $p->current_balance > 0)
-            ->map(fn($p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-                'mobile' => $p->mobile,
-                'balance' => (float)$p->current_balance,
-                'last_txn_date' => $p->transactions()->orderByDesc('date')->value('date'),
-            ])
+            ->map(function ($p) use ($dateFrom, $dateTo) {
+                if ($dateFrom || $dateTo) {
+                    $query = $p->transactions()->whereNull('deleted_at');
+                    if ($dateFrom) $query->where('date', '>=', $dateFrom);
+                    if ($dateTo) $query->where('date', '<=', $dateTo);
+                    $debit = (float) $query->clone()->where('type', 'debit')->sum('amount');
+                    $credit = (float) $query->clone()->where('type', 'credit')->sum('amount');
+                    $balance = $debit - $credit;
+                } else {
+                    $balance = $p->current_balance;
+                }
+                return [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'mobile' => $p->mobile,
+                    'balance' => (float)$balance,
+                    'last_txn_date' => $p->transactions()->orderByDesc('date')->value('date'),
+                ];
+            })
+            ->filter(fn($item) => $item['balance'] > 0)
             ->values();
 
         return response()->json([
@@ -411,19 +437,35 @@ class ReportController extends Controller
      * GET /api/v1/reports/payable-aging
      * Parties we owe money to (credit balance < 0).
      */
-    public function payableAging(): JsonResponse
+    public function payableAging(Request $request): JsonResponse
     {
         $this->authorize('view_reports');
+        $dateFrom = $request->date_from;
+        $dateTo = $request->date_to;
 
         $parties = Party::where('is_active', true)->orderBy('name')->get()
-            ->filter(fn($p) => $p->current_balance < 0)
-            ->map(fn($p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-                'mobile' => $p->mobile,
-                'balance' => abs((float)$p->current_balance),
-                'last_txn_date' => $p->transactions()->orderByDesc('date')->value('date'),
-            ])
+            ->map(function ($p) use ($dateFrom, $dateTo) {
+                if ($dateFrom || $dateTo) {
+                    $query = $p->transactions()->whereNull('deleted_at');
+                    if ($dateFrom) $query->where('date', '>=', $dateFrom);
+                    if ($dateTo) $query->where('date', '<=', $dateTo);
+                    $debit = (float) $query->clone()->where('type', 'debit')->sum('amount');
+                    $credit = (float) $query->clone()->where('type', 'credit')->sum('amount');
+                    $balance = $debit - $credit;
+                } else {
+                    $balance = $p->current_balance;
+                }
+                return [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'mobile' => $p->mobile,
+                    'balance' => abs((float)$balance),
+                    'raw_balance' => (float)$balance,
+                    'last_txn_date' => $p->transactions()->orderByDesc('date')->value('date'),
+                ];
+            })
+            ->filter(fn($item) => $item['raw_balance'] < 0)
+            ->map(fn($item) => collect($item)->except('raw_balance')->all())
             ->values();
 
         return response()->json([

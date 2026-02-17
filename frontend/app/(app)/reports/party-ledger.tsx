@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
-import { Text, Surface, ActivityIndicator, Button, Divider, TextInput, DataTable, Chip } from 'react-native-paper';
+import { Text, Surface, ActivityIndicator, Button, Divider, DataTable, Chip } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -8,6 +8,7 @@ import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import SearchableDropdown from '@/components/SearchableDropdown';
 import ReportActions from '@/components/ReportActions';
+import DateInput from '@/components/DateInput';
 import { formatDate } from '@/utils/formatDate';
 
 export default function PartyLedgerScreen() {
@@ -79,26 +80,10 @@ export default function PartyLedgerScreen() {
             />
           </View>
           <View style={{ flex: 1, minWidth: 130 }}>
-            <Text variant="labelMedium" style={styles.filterLabel}>From Date</Text>
-            <TextInput
-              mode="outlined"
-              value={dateFrom}
-              onChangeText={setDateFrom}
-              placeholder="YYYY-MM-DD"
-              dense
-              style={styles.dateInput}
-            />
+            <DateInput label="From Date" value={dateFrom} onChangeText={setDateFrom} />
           </View>
           <View style={{ flex: 1, minWidth: 130 }}>
-            <Text variant="labelMedium" style={styles.filterLabel}>To Date</Text>
-            <TextInput
-              mode="outlined"
-              value={dateTo}
-              onChangeText={setDateTo}
-              placeholder="YYYY-MM-DD"
-              dense
-              style={styles.dateInput}
-            />
+            <DateInput label="To Date" value={dateTo} onChangeText={setDateTo} />
           </View>
           <View style={{ justifyContent: 'flex-end' }}>
             <Button

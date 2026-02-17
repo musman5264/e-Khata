@@ -26,6 +26,7 @@ const MAIN_NAV: NavItem[] = [
   { label: 'Team', icon: 'account-multiple-outline', activeIcon: 'account-multiple', path: '/(app)/team/members', match: 'team' },
   { label: 'Payments', icon: 'credit-card-outline', activeIcon: 'credit-card', path: '/(app)/payment/history', match: 'payment/history' },
   { label: 'Payment Links', icon: 'link-variant', activeIcon: 'link-variant', path: '/(app)/payment/payment-links', match: 'payment-links' },
+  { label: 'Subscription', icon: 'crown-outline', activeIcon: 'crown', path: '/(app)/subscription/status', match: 'subscription' },
 ];
 
 const SETTINGS_NAV: NavItem[] = [
@@ -44,6 +45,7 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Businesses', icon: 'store-outline', activeIcon: 'store', path: '/(app)/admin/tenants', match: 'admin/tenants' },
   { label: 'Sessions', icon: 'shield-lock-outline', activeIcon: 'shield-lock', path: '/(app)/admin/sessions', match: 'admin/sessions' },
   { label: 'Versions', icon: 'tag-outline', activeIcon: 'tag', path: '/(app)/admin/versions', match: 'admin/versions' },
+  { label: 'Subscriptions', icon: 'crown-outline', activeIcon: 'crown', path: '/(app)/admin/subscriptions', match: 'admin/subscriptions' },
 ];
 
 function SidebarItem({ item, isActive, onPress }: { item: NavItem; isActive: boolean; onPress: () => void }) {

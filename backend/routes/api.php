@@ -15,6 +15,8 @@ use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\LogController;
 use App\Http\Controllers\Api\V1\SystemSettingsController;
 use App\Http\Controllers\Api\V1\VersionController;
+use App\Http\Controllers\Api\V1\SubscriptionController;
+use App\Http\Controllers\Api\V1\Admin\SubscriptionAdminController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -44,6 +46,13 @@ Route::prefix('v1')->group(function () {
 
     // Public payment link view (no auth)
     Route::get('pay/{token}', [PaymentLinkController::class, 'publicView']);
+
+    // Subscription plans (public — no auth needed)
+    Route::get('subscription/plans', [SubscriptionController::class, 'plans']);
+
+    // Subscription payment gateway callbacks (public)
+    Route::post('subscription/callback/jazzcash', [SubscriptionController::class, 'jazzCashCallback']);
+    Route::post('subscription/callback/easypaisa', [SubscriptionController::class, 'easypaisaCallback']);
 
     // Team invitation accept (auth required but no tenant header needed)
     Route::post('team/invite/accept', [TeamController::class, 'acceptInvite'])
@@ -87,7 +96,7 @@ Route::prefix('v1')->group(function () {
         // ──────────────────────────────────────────────────────
         // Tenant-Scoped Routes (require X-Tenant-ID header)
         // ──────────────────────────────────────────────────────
-        Route::middleware(['tenant', 'log.api'])->group(function () {
+        Route::middleware(['tenant', 'log.api', 'subscription'])->group(function () {
 
             // Tenants — current / update / delete
             Route::get('tenants/current', [TenantController::class, 'current']);
@@ -161,6 +170,15 @@ Route::prefix('v1')->group(function () {
                 Route::get('system', [LogController::class, 'system']);
                 Route::get('access', [LogController::class, 'access']);
             });
+
+            // Subscriptions (tenant-scoped)
+            Route::prefix('subscription')->group(function () {
+                Route::get('current', [SubscriptionController::class, 'current']);
+                Route::post('subscribe', [SubscriptionController::class, 'subscribe']);
+                Route::post('retry-payment/{paymentId}', [SubscriptionController::class, 'retryPayment']);
+                Route::post('cancel', [SubscriptionController::class, 'cancel']);
+                Route::get('payments', [SubscriptionController::class, 'payments']);
+            });
         });
 
         // ──────────────────────────────────────────────────────
@@ -212,6 +230,21 @@ Route::prefix('v1')->group(function () {
             Route::get('sessions/{id}', [SessionController::class, 'adminShow']);
             Route::get('sessions/{id}/activities', [SessionController::class, 'sessionActivities']);
             Route::delete('sessions/{id}', [SessionController::class, 'adminDestroy']);
+
+            // Subscription management (Super Admin)
+            Route::prefix('subscription')->group(function () {
+                Route::get('stats', [SubscriptionAdminController::class, 'stats']);
+                Route::get('plans', [SubscriptionAdminController::class, 'plans']);
+                Route::post('plans', [SubscriptionAdminController::class, 'createPlan']);
+                Route::put('plans/{id}', [SubscriptionAdminController::class, 'updatePlan']);
+                Route::delete('plans/{id}', [SubscriptionAdminController::class, 'deletePlan']);
+                Route::get('list', [SubscriptionAdminController::class, 'list']);
+                Route::post('assign', [SubscriptionAdminController::class, 'assign']);
+                Route::put('{id}/extend', [SubscriptionAdminController::class, 'extend']);
+                Route::put('{id}/suspend', [SubscriptionAdminController::class, 'suspend']);
+                Route::get('payments', [SubscriptionAdminController::class, 'payments']);
+                Route::post('payments/{id}/mark-paid', [SubscriptionAdminController::class, 'markPaid']);
+            });
         });
     });
 });

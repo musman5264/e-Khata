@@ -5,8 +5,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '@/theme';
 
 /**
- * Inject a comprehensive @media print stylesheet once.
- * ONLY prints the #printable-report area — hides everything else.
+ * Inject a minimal @media print stylesheet.
+ * The actual print isolation is done via JavaScript in handlePrint():
+ * we clone #printable-report into a top-level container and hide #root.
  */
 if (Platform.OS === 'web' && typeof document !== 'undefined') {
   const printStyleId = 'ekhata-print-styles';
@@ -15,45 +16,22 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
     style.id = printStyleId;
     style.textContent = `
       @media print {
-        /* Hide everything first */
-        body > * {
+        /* Hide the app root when printing */
+        body > #root {
           display: none !important;
         }
 
-        /* Show the root */
-        #root {
+        /* Show only the print container injected by JS */
+        body > #ekhata-print-container {
           display: block !important;
-        }
-
-        /* Walk down to find printable-report: show its ancestor chain */
-        #root * {
-          visibility: hidden;
-          height: 0;
-          overflow: hidden;
-          padding: 0 !important;
-          margin: 0 !important;
-        }
-
-        /* Show the printable-report and all its children */
-        [id="printable-report"] {
-          display: block !important;
-          visibility: visible !important;
-          height: auto !important;
-          overflow: visible !important;
-          position: fixed !important;
-          left: 0 !important;
-          top: 0 !important;
+          position: static !important;
           width: 100% !important;
-          max-width: 100% !important;
-          padding: 10mm !important;
-          margin: 0 !important;
-          z-index: 99999 !important;
           background: #fff !important;
+          padding: 10mm !important;
         }
 
-        [id="printable-report"] * {
+        body > #ekhata-print-container * {
           visibility: visible !important;
-          height: auto !important;
           overflow: visible !important;
         }
 
@@ -64,26 +42,15 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
           padding: 0 !important;
         }
 
-        /* Explicit hide for known non-print elements */
-        [id="web-sidebar"],
-        [id="report-actions"],
-        [id="impersonation-banner"],
-        [id="share-modal-overlay"],
-        [id="export-modal-overlay"],
-        [id="report-filter-card"],
-        [data-print="no-print"],
-        [role="navigation"],
-        [role="tablist"] {
-          display: none !important;
-          visibility: hidden !important;
-          height: 0 !important;
-        }
-
-        /* Print-friendly adjustments */
         @page {
           margin: 10mm;
           size: A4 portrait;
         }
+      }
+
+      /* Screen style: hide the print container */
+      #ekhata-print-container {
+        display: none;
       }
     `;
     document.head.appendChild(style);
@@ -117,8 +84,32 @@ export default function ReportActions({
 
   const handlePrint = () => {
     if (onPrint) return onPrint();
-    if (Platform.OS === 'web') {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      // Clone the printable content and inject into body as a sibling of #root
+      const source = document.getElementById('printable-report');
+      if (!source) {
+        window.print();
+        return;
+      }
+
+      // Remove any previous print container
+      const existing = document.getElementById('ekhata-print-container');
+      if (existing) existing.remove();
+
+      // Create print container with cloned content
+      const container = document.createElement('div');
+      container.id = 'ekhata-print-container';
+      container.appendChild(source.cloneNode(true));
+      document.body.appendChild(container);
+
+      // Print, then clean up
       window.print();
+
+      // Clean up after a brief delay (some browsers need it)
+      setTimeout(() => {
+        const el = document.getElementById('ekhata-print-container');
+        if (el) el.remove();
+      }, 1000);
     }
   };
 

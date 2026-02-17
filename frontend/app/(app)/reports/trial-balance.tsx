@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Card, Surface, DataTable } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
@@ -7,14 +7,20 @@ import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 import ReportActions from '@/components/ReportActions';
+import DateInput from '@/components/DateInput';
 
 export default function TrialBalanceScreen() {
   const { t } = useTranslation();
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['trial-balance'],
+    queryKey: ['trial-balance', dateFrom, dateTo],
     queryFn: async () => {
-      const res = await api.get('/reports/trial-balance');
+      const params: any = {};
+      if (dateFrom) params.date_from = dateFrom;
+      if (dateTo) params.date_to = dateTo;
+      const res = await api.get('/reports/trial-balance', { params });
       return res.data.data;
     },
   });
@@ -26,6 +32,18 @@ export default function TrialBalanceScreen() {
         <Text variant="headlineSmall" style={{ fontWeight: '700' }}>Trial Balance</Text>
         {data?.parties?.length > 0 && <ReportActions reportTitle="Trial_Balance" />}
       </View>
+
+      {/* Date Filters */}
+      <Surface style={styles.filterCard} nativeID="report-filter-card">
+        <View style={styles.filterRow}>
+          <View style={{ flex: 1, minWidth: 130 }}>
+            <DateInput label="From Date" value={dateFrom} onChangeText={setDateFrom} />
+          </View>
+          <View style={{ flex: 1, minWidth: 130 }}>
+            <DateInput label="To Date" value={dateTo} onChangeText={setDateTo} />
+          </View>
+        </View>
+      </Surface>
 
       <View nativeID="printable-report">
       {/* Summary Cards */}
@@ -101,4 +119,6 @@ const styles = StyleSheet.create({
   summaryLabel: { fontSize: 11, color: colors.textSecondary },
   summaryValue: { fontSize: 18, fontWeight: 'bold', marginTop: 2 },
   tableCard: { borderRadius: 12 },
+  filterCard: { padding: spacing.base, borderRadius: 12, marginBottom: spacing.base, elevation: 1 },
+  filterRow: { flexDirection: 'row', gap: spacing.md },
 });

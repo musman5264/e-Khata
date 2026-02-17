@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Surface, DataTable, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
@@ -8,13 +8,20 @@ import { colors, spacing } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate } from '@/utils/formatDate';
 import ReportActions from '@/components/ReportActions';
+import DateInput from '@/components/DateInput';
 
 export default function ReceivableAgingScreen() {
   const { t } = useTranslation();
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
   const { data, isLoading } = useQuery({
-    queryKey: ['receivable-aging'],
+    queryKey: ['receivable-aging', dateFrom, dateTo],
     queryFn: async () => {
-      const res = await api.get('/reports/receivable-aging');
+      const params: any = {};
+      if (dateFrom) params.date_from = dateFrom;
+      if (dateTo) params.date_to = dateTo;
+      const res = await api.get('/reports/receivable-aging', { params });
       return res.data.data;
     },
   });
@@ -30,6 +37,18 @@ export default function ReceivableAgingScreen() {
         <Text variant="headlineSmall" style={{ fontWeight: '700' }}>Receivable Aging</Text>
         {data?.parties?.length > 0 && <ReportActions reportTitle="Receivable_Aging" />}
       </View>
+
+      {/* Date Filters */}
+      <Surface style={styles.filterCard} nativeID="report-filter-card">
+        <View style={styles.filterRow}>
+          <View style={{ flex: 1, minWidth: 130 }}>
+            <DateInput label="From Date" value={dateFrom} onChangeText={setDateFrom} />
+          </View>
+          <View style={{ flex: 1, minWidth: 130 }}>
+            <DateInput label="To Date" value={dateTo} onChangeText={setDateTo} />
+          </View>
+        </View>
+      </Surface>
 
       <View nativeID="printable-report">
       <View style={styles.summaryRow}>
@@ -86,4 +105,6 @@ const styles = StyleSheet.create({
   summaryValue: { fontSize: 24, fontWeight: 'bold', marginTop: 4 },
   summaryCount: { fontSize: 11, color: colors.textHint, marginTop: 2 },
   tableCard: { borderRadius: 12, elevation: 1 },
+  filterCard: { padding: spacing.base, borderRadius: 12, marginBottom: spacing.base, elevation: 1 },
+  filterRow: { flexDirection: 'row', gap: spacing.md },
 });
