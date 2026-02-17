@@ -7,6 +7,7 @@ use App\Http\Requests\StoreTransactionRequest;
 use App\Http\Requests\UpdateTransactionRequest;
 use App\Models\Party;
 use App\Models\Transaction;
+use App\Services\ActivityLogService;
 use App\Services\LedgerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,10 +15,12 @@ use Illuminate\Http\Request;
 class TransactionController extends Controller
 {
     protected LedgerService $ledgerService;
+    protected ActivityLogService $activityLog;
 
-    public function __construct(LedgerService $ledgerService)
+    public function __construct(LedgerService $ledgerService, ActivityLogService $activityLog)
     {
         $this->ledgerService = $ledgerService;
+        $this->activityLog = $activityLog;
     }
 
     /**
@@ -37,6 +40,8 @@ class TransactionController extends Controller
                 'user_id' => $request->user()->id,
             ]
         ));
+
+        $this->activityLog->log('transaction_created', $transaction, "Created {$transaction->type} transaction of Rs {$transaction->amount} for {$party->name}", null, $transaction->toArray());
 
         return response()->json([
             'success' => true,
@@ -121,7 +126,10 @@ class TransactionController extends Controller
         $this->authorize('edit_transaction');
 
         $transaction = Transaction::where('party_id', $partyId)->findOrFail($id);
+        $oldValues = $transaction->toArray();
         $transaction = $this->ledgerService->updateTransaction($transaction, $request->validated());
+
+        $this->activityLog->log('transaction_updated', $transaction, "Updated transaction #{$transaction->id}", $oldValues, $transaction->fresh()->toArray());
 
         return response()->json([
             'success' => true,
@@ -138,6 +146,9 @@ class TransactionController extends Controller
         $this->authorize('delete_transaction');
 
         $transaction = Transaction::where('party_id', $partyId)->findOrFail($id);
+
+        $this->activityLog->log('transaction_deleted', $transaction, "Deleted {$transaction->type} transaction of Rs {$transaction->amount}", $transaction->toArray());
+
         $this->ledgerService->deleteTransaction($transaction);
 
         return response()->json([
@@ -173,6 +184,7 @@ class TransactionController extends Controller
         $this->authorize('edit_transaction');
 
         $transaction = Transaction::findOrFail($id);
+        $oldValues = $transaction->toArray();
 
         $request->validate([
             'type' => 'sometimes|in:debit,credit',
@@ -185,6 +197,8 @@ class TransactionController extends Controller
         $transaction = $this->ledgerService->updateTransaction($transaction, $request->only([
             'type', 'amount', 'date', 'description', 'reference_number',
         ]));
+
+        $this->activityLog->log('transaction_updated', $transaction, "Updated transaction #{$transaction->id} (flat)", $oldValues, $transaction->fresh()->toArray());
 
         return response()->json([
             'success' => true,
@@ -201,6 +215,9 @@ class TransactionController extends Controller
         $this->authorize('delete_transaction');
 
         $transaction = Transaction::findOrFail($id);
+
+        $this->activityLog->log('transaction_deleted', $transaction, "Deleted {$transaction->type} transaction of Rs {$transaction->amount} (flat)", $transaction->toArray());
+
         $this->ledgerService->deleteTransaction($transaction);
 
         return response()->json([

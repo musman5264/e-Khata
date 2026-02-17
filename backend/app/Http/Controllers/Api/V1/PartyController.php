@@ -6,12 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePartyRequest;
 use App\Http\Requests\UpdatePartyRequest;
 use App\Models\Party;
+use App\Services\ActivityLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class PartyController extends Controller
 {
+    protected ActivityLogService $activityLog;
+
+    public function __construct(ActivityLogService $activityLog)
+    {
+        $this->activityLog = $activityLog;
+    }
     /**
      * POST /api/v1/parties
      */
@@ -22,6 +29,8 @@ class PartyController extends Controller
         $party = Party::create(array_merge($request->validated(), [
             'created_by' => $request->user()->id,
         ]));
+
+        $this->activityLog->log('party_created', $party, "Created party: {$party->name}", null, $party->toArray());
 
         return response()->json([
             'success' => true,
@@ -117,7 +126,10 @@ class PartyController extends Controller
         $this->authorize('edit_party');
 
         $party = Party::findOrFail($id);
+        $oldValues = $party->toArray();
         $party->update($request->validated());
+
+        $this->activityLog->log('party_updated', $party, "Updated party: {$party->name}", $oldValues, $party->fresh()->toArray());
 
         return response()->json([
             'success' => true,
@@ -134,6 +146,9 @@ class PartyController extends Controller
         $this->authorize('delete_party');
 
         $party = Party::findOrFail($id);
+
+        $this->activityLog->log('party_deleted', $party, "Deleted party: {$party->name}", $party->toArray());
+
         $party->delete();
 
         return response()->json([
@@ -196,6 +211,8 @@ class PartyController extends Controller
         $path = $request->file('photo')->store('party-photos', 'public');
         $party->update(['photo_url' => '/storage/' . $path]);
 
+        $this->activityLog->log('party_photo_uploaded', $party, "Uploaded photo for party: {$party->name}");
+
         return response()->json([
             'success' => true,
             'message' => 'Photo uploaded successfully.',
@@ -217,6 +234,8 @@ class PartyController extends Controller
             Storage::disk('public')->delete($oldPath);
             $party->update(['photo_url' => null]);
         }
+
+        $this->activityLog->log('party_photo_deleted', $party, "Deleted photo for party: {$party->name}");
 
         return response()->json([
             'success' => true,

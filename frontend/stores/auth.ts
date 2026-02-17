@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import api, { setToken, removeToken, setTenantId } from '@/services/api';
+import api, { setToken, removeToken, setTenantId, getStoredToken, getStoredTenantId } from '@/services/api';
 
 interface User {
   id: number;
@@ -36,6 +36,7 @@ interface AuthState {
   register: (data: { name: string; email?: string; mobile: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
+  rehydrate: () => Promise<void>;
   selectTenant: (tenant: Tenant) => Promise<void>;
   setUser: (user: User) => void;
   setToken: (token: string) => void;
@@ -105,9 +106,50 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true });
     try {
       const { data } = await api.get('/auth/me');
-      set({ user: data.data, isAuthenticated: true, isLoading: false });
+      const userData = data.data?.user || data.data;
+      const tenants = userData.tenants || data.data?.tenants || [];
+      userData.tenants = tenants;
+      set({ user: userData, isAuthenticated: true, isLoading: false });
     } catch {
       set({ user: null, isAuthenticated: false, isLoading: false });
+    }
+  },
+
+  rehydrate: async () => {
+    const storedToken = await getStoredToken();
+    if (!storedToken) {
+      set({ isLoading: false });
+      return;
+    }
+    set({ isLoading: true, token: storedToken });
+    try {
+      const { data } = await api.get('/auth/me');
+      const userData = data.data?.user || data.data;
+      const tenants = userData.tenants || data.data?.tenants || [];
+      userData.tenants = tenants;
+
+      // Restore tenant from storage
+      const storedTenantId = await getStoredTenantId();
+      let currentTenant: Tenant | null = null;
+      if (storedTenantId && tenants.length > 0) {
+        currentTenant = tenants.find((t: Tenant) => String(t.id) === storedTenantId) || null;
+      }
+      // If no stored tenant but only one available, auto-select it
+      if (!currentTenant && tenants.length === 1) {
+        currentTenant = tenants[0];
+        await setTenantId(String(currentTenant.id));
+      }
+
+      set({
+        user: userData,
+        token: storedToken,
+        currentTenant,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+    } catch {
+      await removeToken();
+      set({ user: null, token: null, isAuthenticated: false, isLoading: false });
     }
   },
 

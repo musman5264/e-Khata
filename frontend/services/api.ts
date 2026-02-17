@@ -68,6 +68,10 @@ async function getToken(): Promise<string | null> {
   }
 }
 
+export async function getStoredToken(): Promise<string | null> {
+  return getToken();
+}
+
 export async function setToken(token: string): Promise<void> {
   if (Platform.OS === 'web') {
     localStorage.setItem('auth_token', token);
@@ -102,6 +106,10 @@ export async function setTenantId(id: string): Promise<void> {
   } else {
     await SecureStore.setItemAsync('tenant_id', id.toString());
   }
+}
+
+export async function getStoredTenantId(): Promise<string | null> {
+  return getTenantId();
 }
 
 // Device ID management

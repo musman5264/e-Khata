@@ -4,12 +4,19 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
+use App\Services\ActivityLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class TenantController extends Controller
 {
+    protected ActivityLogService $activityLog;
+
+    public function __construct(ActivityLogService $activityLog)
+    {
+        $this->activityLog = $activityLog;
+    }
     /**
      * POST /api/v1/tenants — Create business.
      */
@@ -39,6 +46,8 @@ class TenantController extends Controller
 
         // Assign Owner role
         $user->assignRole('Owner');
+
+        $this->activityLog->log('business_created', $tenant, "Created business: {$tenant->name}", null, $tenant->toArray());
 
         return response()->json([
             'success' => true,
@@ -79,9 +88,12 @@ class TenantController extends Controller
             'settings' => 'nullable|array',
         ]);
 
+        $oldValues = $tenant->toArray();
         $tenant->update($request->only([
             'name', 'address', 'city', 'phone', 'email', 'logo_url', 'settings',
         ]));
+
+        $this->activityLog->log('business_updated', $tenant, "Updated business: {$tenant->name}", $oldValues, $tenant->fresh()->toArray());
 
         return response()->json([
             'success' => true,
@@ -98,6 +110,8 @@ class TenantController extends Controller
         $tenant = Tenant::findOrFail($id);
 
         $this->authorize('manage_tenant');
+
+        $this->activityLog->log('business_deactivated', $tenant, "Deactivated business: {$tenant->name}", ['is_active' => true], ['is_active' => false]);
 
         $tenant->update(['is_active' => false]);
 

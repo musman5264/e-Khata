@@ -11,28 +11,45 @@ export interface DropdownItem {
 }
 
 interface SearchableDropdownProps {
-  label: string;
-  items: DropdownItem[];
-  value: string | number | null;
-  onSelect: (item: DropdownItem) => void;
+  label?: string;
+  items?: DropdownItem[];
+  value?: string | number | null;
+  onSelect: ((item: DropdownItem) => void) | ((value: any) => void);
   placeholder?: string;
   error?: string;
   disabled?: boolean;
   mode?: 'outlined' | 'flat';
   style?: any;
+  // Legacy prop aliases (backward compat)
+  options?: DropdownItem[];
+  selectedValue?: string | number | null;
 }
 
 export default function SearchableDropdown({
-  label,
-  items,
-  value,
+  label = '',
+  items: itemsProp,
+  value: valueProp,
   onSelect,
   placeholder = 'Search...',
   error,
   disabled = false,
   mode = 'outlined',
   style,
+  options,
+  selectedValue,
 }: SearchableDropdownProps) {
+  // Support both old (options/selectedValue) and new (items/value) APIs
+  const items = itemsProp || options || [];
+  const value = valueProp !== undefined ? valueProp : (selectedValue !== undefined ? selectedValue : null);
+  // Detect legacy mode: old callers pass onSelect(value) instead of onSelect(item)
+  const isLegacy = !!(options || selectedValue !== undefined);
+  const handleItemSelect = useCallback((item: DropdownItem) => {
+    if (isLegacy) {
+      (onSelect as (value: any) => void)(item.value);
+    } else {
+      (onSelect as (item: DropdownItem) => void)(item);
+    }
+  }, [onSelect, isLegacy]);
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const inputRef = useRef<any>(null);
@@ -56,11 +73,11 @@ export default function SearchableDropdown({
   }, [items, search]);
 
   const handleSelect = useCallback((item: DropdownItem) => {
-    onSelect(item);
+    handleItemSelect(item);
     setSearch('');
     setOpen(false);
     Keyboard.dismiss();
-  }, [onSelect]);
+  }, [handleItemSelect]);
 
   const handleFocus = () => {
     if (!disabled) {
