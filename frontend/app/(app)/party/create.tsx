@@ -20,7 +20,7 @@ export default function CreatePartyScreen() {
     address: '',
     type: 'customer',
     opening_balance: '',
-    opening_balance_type: 'debit',
+    opening_balance_type: 'dr',
     notes: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -133,8 +133,8 @@ export default function CreatePartyScreen() {
           value={form.opening_balance_type}
           onValueChange={(v) => updateField('opening_balance_type', v)}
           buttons={[
-            { value: 'debit', label: t('transaction.debit') },
-            { value: 'credit', label: t('transaction.credit') },
+            { value: 'dr', label: t('transaction.debit') },
+            { value: 'cr', label: t('transaction.credit') },
           ]}
           style={styles.input}
         />
