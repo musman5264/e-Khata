@@ -18,11 +18,11 @@ class DemoDataSeeder extends Seeder
     {
         // ── Super Admin User ─────────────────────────────────
         $superAdmin = User::firstOrCreate(
-            ['mobile' => '03009999999'],
+            ['mobile' => '923009999999'],
             [
                 'name' => 'Super Admin',
                 'email' => 'admin@ekhata.pk',
-                'mobile' => '03009999999',
+                'mobile' => '923009999999',
                 'password' => Hash::make('admin123'),
                 'language_pref' => 'en',
                 'is_active' => true,
@@ -41,7 +41,7 @@ class DemoDataSeeder extends Seeder
             [
                 'name' => 'Demo User',
                 'email' => 'demo@ekhata.pk',
-                'mobile' => '03001234567',
+                'mobile' => '923001234567',
                 'password' => Hash::make('password'),
                 'language_pref' => 'en',
                 'is_active' => true,
