@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\AppVersion;
 use App\Services\ActivityLogService;
+use App\Services\AutoVersionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -179,6 +180,51 @@ class VersionController extends Controller
         return response()->json([
             'success' => true,
             'message' => "Version {$versionStr} deleted.",
+        ]);
+    }
+
+    /**
+     * POST /api/v1/admin/versions/auto-track
+     * Auto-create a version entry for a change.
+     */
+    public function autoTrack(Request $request): JsonResponse
+    {
+        $this->authorize('manage_system_settings');
+
+        $request->validate([
+            'type'      => 'required|in:major,minor,patch',
+            'title'     => 'required|string|max:255',
+            'changelog' => 'required|string',
+            'channel'   => 'sometimes|in:stable,beta,alpha',
+        ]);
+
+        $version = AutoVersionService::track(
+            $request->type,
+            $request->title,
+            $request->changelog,
+            $request->channel ?? 'stable'
+        );
+
+        $this->activityLog->logAction('version_auto_tracked', "Auto-tracked version {$version->version}: {$version->title}");
+
+        return response()->json([
+            'success' => true,
+            'message' => "Version {$version->version} auto-tracked.",
+            'data'    => $version->load('releasedBy:id,name'),
+        ], 201);
+    }
+
+    /**
+     * GET /api/v1/admin/versions/history
+     * Get full version history with stats.
+     */
+    public function history(): JsonResponse
+    {
+        $this->authorize('manage_system_settings');
+
+        return response()->json([
+            'success' => true,
+            'data'    => AutoVersionService::getHistory(),
         ]);
     }
 }

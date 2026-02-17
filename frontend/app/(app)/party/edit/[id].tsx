@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { TextInput, Button, SegmentedButtons, Text } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, useWindowDimensions } from 'react-native';
+import { TextInput, Button, SegmentedButtons, Text, Surface } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as ImagePicker from 'expo-image-picker';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 
@@ -21,8 +23,12 @@ export default function EditPartyScreen() {
     address: '',
     type: 'customer',
     notes: '',
+    bill_book_name: '',
+    bill_book_number: '',
+    page_number: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
 
   const { data: party } = useQuery({
     queryKey: ['party', id],
@@ -42,7 +48,11 @@ export default function EditPartyScreen() {
         address: party.address || '',
         type: party.type || 'customer',
         notes: party.notes || '',
+        bill_book_name: party.bill_book_name || '',
+        bill_book_number: party.bill_book_number || '',
+        page_number: party.page_number || '',
       });
+      if (party.photo_url) setPhotoUri(party.photo_url);
     }
   }, [party]);
 
@@ -63,6 +73,41 @@ export default function EditPartyScreen() {
     },
   });
 
+  const photoMutation = useMutation({
+    mutationFn: async (uri: string) => {
+      const formData = new FormData();
+      if (Platform.OS === 'web') {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        formData.append('photo', blob, 'photo.jpg');
+      } else {
+        formData.append('photo', { uri, type: 'image/jpeg', name: 'photo.jpg' } as any);
+      }
+      const res = await api.post(`/parties/${id}/photo`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      setPhotoUri(data.data.photo_url);
+      queryClient.invalidateQueries({ queryKey: ['party', id] });
+    },
+  });
+
+  const pickPhoto = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      const uri = result.assets[0].uri;
+      setPhotoUri(uri);
+      photoMutation.mutate(uri);
+    }
+  };
+
   const handleSubmit = () => {
     mutation.mutate(form);
   };
@@ -74,6 +119,22 @@ export default function EditPartyScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Party Photo */}
+      <View style={styles.photoSection}>
+        <TouchableOpacity onPress={pickPhoto} activeOpacity={0.7} style={styles.photoWrap}>
+          {photoUri ? (
+            <Image source={{ uri: photoUri.startsWith('http') || photoUri.startsWith('/') ? photoUri : photoUri }} style={styles.photoImg} />
+          ) : (
+            <View style={styles.photoPlaceholder}>
+              <MaterialCommunityIcons name="camera-plus-outline" size={28} color="#B0B5C8" />
+            </View>
+          )}
+          <View style={styles.photoBadge}>
+            <MaterialCommunityIcons name="pencil" size={12} color="#fff" />
+          </View>
+        </TouchableOpacity>
+      </View>
+
       <TextInput
         label={t('party.name')}
         value={form.name}
@@ -132,6 +193,42 @@ export default function EditPartyScreen() {
         style={styles.input}
       />
 
+      {/* Bill Book Section */}
+      <Text variant="labelLarge" style={styles.label}>Bill Book (Optional)</Text>
+      <Surface style={styles.billBookCard}>
+        <TextInput
+          label="Bill Book Name"
+          value={form.bill_book_name}
+          onChangeText={(v) => updateField('bill_book_name', v)}
+          mode="outlined"
+          style={styles.input}
+          left={<TextInput.Icon icon="book-open-outline" />}
+          placeholder="e.g. Sales Book"
+        />
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <View style={{ flex: 1 }}>
+            <TextInput
+              label="Bill Book #"
+              value={form.bill_book_number}
+              onChangeText={(v) => updateField('bill_book_number', v)}
+              mode="outlined"
+              style={styles.input}
+              left={<TextInput.Icon icon="numeric" />}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <TextInput
+              label="Page #"
+              value={form.page_number}
+              onChangeText={(v) => updateField('page_number', v)}
+              mode="outlined"
+              style={styles.input}
+              left={<TextInput.Icon icon="file-document-outline" />}
+            />
+          </View>
+        </View>
+      </Surface>
+
       <TextInput
         label={t('party.notes')}
         value={form.notes}
@@ -162,4 +259,10 @@ const styles = StyleSheet.create({
   input: { marginBottom: spacing.md },
   label: { marginBottom: spacing.sm, marginTop: spacing.sm },
   submitBtn: { marginTop: spacing.lg, borderRadius: 8 },
+  billBookCard: { borderRadius: 12, padding: 14, elevation: 1, backgroundColor: '#fff', marginBottom: spacing.md },
+  photoSection: { alignItems: 'center', paddingVertical: 16 },
+  photoWrap: { position: 'relative' },
+  photoImg: { width: 80, height: 80, borderRadius: 40, borderWidth: 2, borderColor: '#ECEEF5' },
+  photoPlaceholder: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#F3F4F6', borderWidth: 2, borderColor: '#ECEEF5', alignItems: 'center', justifyContent: 'center' },
+  photoBadge: { position: 'absolute', bottom: 0, right: 0, width: 24, height: 24, borderRadius: 12, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
 });

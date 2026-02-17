@@ -26,6 +26,12 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
 
+  // Impersonation state
+  isImpersonating: boolean;
+  originalUser: User | null;
+  originalToken: string | null;
+  originalTenant: Tenant | null;
+
   login: (credentials: { mobile: string; password: string }) => Promise<void>;
   register: (data: { name: string; email?: string; mobile: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
@@ -33,6 +39,8 @@ interface AuthState {
   selectTenant: (tenant: Tenant) => Promise<void>;
   setUser: (user: User) => void;
   setToken: (token: string) => void;
+  startImpersonation: (userId: number) => Promise<void>;
+  stopImpersonation: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -41,6 +49,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   currentTenant: null,
   isLoading: false,
   isAuthenticated: false,
+
+  // Impersonation defaults
+  isImpersonating: false,
+  originalUser: null,
+  originalToken: null,
+  originalTenant: null,
 
   login: async (credentials) => {
     set({ isLoading: true });
@@ -104,4 +118,54 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setUser: (user) => set({ user }),
   setToken: (token) => set({ token }),
+
+  startImpersonation: async (userId: number) => {
+    const state = get();
+    try {
+      const { data } = await api.post(`/admin/users/${userId}/impersonate`);
+      const impToken = data.data.token;
+      const impUser = data.data.user;
+
+      // Save original admin state
+      const origUser = state.user;
+      const origToken = state.token;
+      const origTenant = state.currentTenant;
+
+      // Switch to impersonated user's token
+      await setToken(impToken);
+      set({
+        user: impUser,
+        token: impToken,
+        isImpersonating: true,
+        originalUser: origUser,
+        originalToken: origToken,
+        originalTenant: origTenant,
+        currentTenant: null,
+      });
+
+      // Auto-select first tenant of impersonated user
+      if (impUser.tenants?.length === 1) {
+        await get().selectTenant(impUser.tenants[0]);
+      }
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  stopImpersonation: async () => {
+    const state = get();
+    if (!state.isImpersonating || !state.originalToken) return;
+
+    // Restore original admin session
+    await setToken(state.originalToken);
+    set({
+      user: state.originalUser,
+      token: state.originalToken,
+      currentTenant: state.originalTenant,
+      isImpersonating: false,
+      originalUser: null,
+      originalToken: null,
+      originalTenant: null,
+    });
+  },
 }));

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, ScrollView, Platform, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, ScrollView, Platform, useWindowDimensions, Alert } from 'react-native';
 import { Text, Surface, ActivityIndicator, Searchbar, Chip, Portal, Modal, TextInput, Button, IconButton, Switch } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import api from '@/services/api';
+import { useAuthStore } from '@/stores/auth';
 import { colors, spacing } from '@/theme';
 import { formatDate } from '@/utils/formatDate';
 
@@ -20,6 +22,8 @@ interface User {
 
 export default function AdminUsersScreen() {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const { startImpersonation, user: currentUser } = useAuthStore();
   const { width } = useWindowDimensions();
   const isWeb = Platform.OS === 'web' && width > 768;
   const [search, setSearch] = useState('');
@@ -119,6 +123,17 @@ export default function AdminUsersScreen() {
     }
   };
 
+  const handleImpersonate = async (user: User) => {
+    if (user.id === currentUser?.id) return;
+    try {
+      await startImpersonation(user.id);
+      closeModal();
+      router.replace('/(app)/(tabs)');
+    } catch (error: any) {
+      setFormErrors(error.response?.data?.message || 'Impersonation failed');
+    }
+  };
+
   const roleColor = (role: string) => {
     switch (role) {
       case 'Super Admin': return '#E84393';
@@ -177,6 +192,12 @@ export default function AdminUsersScreen() {
                     <MaterialCommunityIcons name="lock-reset" size={18} color="#D4AC0D" />
                     <Text style={[mS.actionBtnText, { color: '#D4AC0D' }]}>Password</Text>
                   </TouchableOpacity>
+                  {selectedUser.id !== currentUser?.id && (
+                    <TouchableOpacity style={[mS.actionBtn, { backgroundColor: '#F3E5F5' }]} onPress={() => handleImpersonate(selectedUser)}>
+                      <MaterialCommunityIcons name="incognito" size={18} color="#8E24AA" />
+                      <Text style={[mS.actionBtnText, { color: '#8E24AA' }]}>Login As</Text>
+                    </TouchableOpacity>
+                  )}
                   <TouchableOpacity style={[mS.actionBtn, { backgroundColor: selectedUser.is_active ? '#ffebee' : '#e8f5e9' }]} onPress={() => { toggleMutation.mutate(selectedUser.id); closeModal(); }}>
                     <MaterialCommunityIcons name={selectedUser.is_active ? 'account-off' : 'account-check'} size={18} color={selectedUser.is_active ? '#c62828' : '#2e7d32'} />
                     <Text style={[mS.actionBtnText, { color: selectedUser.is_active ? '#c62828' : '#2e7d32' }]}>{selectedUser.is_active ? 'Disable' : 'Enable'}</Text>

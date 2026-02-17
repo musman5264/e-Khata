@@ -77,6 +77,8 @@ const TABS: Tab[] = [
   { key: 'email', label: 'Email', icon: 'email-outline', groups: ['email'], color: '#3B82F6' },
   { key: 'notifications', label: 'Notifications', icon: 'bell-outline', groups: ['notifications'], color: '#F59E0B' },
   { key: 'whatsapp', label: 'WhatsApp', icon: 'whatsapp', groups: ['whatsapp', 'whatsapp_direct'], color: '#25D366' },
+  { key: 'firebase', label: 'Firebase', icon: 'firebase', groups: ['firebase'], color: '#FFCA28' },
+  { key: 'googlecloud', label: 'Google Cloud', icon: 'google-cloud', groups: ['google_cloud'], color: '#4285F4' },
   { key: 'thirdparty', label: 'Third Party Logins', icon: 'shield-account-outline', groups: ['integrations_google', 'integrations_meta', 'integrations_apple', 'integrations_microsoft'], color: '#8B5CF6' },
 ];
 
@@ -95,6 +97,8 @@ const GROUP_META: Record<string, { label: string; icon: IconName; color: string;
   integrations_meta: { label: 'Meta / Facebook', icon: 'facebook', color: '#1877F2', description: 'Meta OAuth sign-in, Facebook Pixel, and WhatsApp Business.' },
   integrations_apple: { label: 'Apple', icon: 'apple', color: '#000000', description: 'Sign in with Apple integration for iOS and web users.' },
   integrations_microsoft: { label: 'Microsoft', icon: 'microsoft', color: '#00A4EF', description: 'Microsoft / Azure AD sign-in for enterprise users.' },
+  firebase: { label: 'Firebase Project', icon: 'firebase', color: '#FFCA28', description: 'Configure Firebase services: Cloud Messaging (FCM), Analytics, Crashlytics, Remote Config, and Dynamic Links.' },
+  google_cloud: { label: 'Google Cloud Services', icon: 'google-cloud', color: '#4285F4', description: 'Configure Google Cloud Platform services: reCAPTCHA, Translation API, and service account.' },
 };
 
 export default function AdminSettingsScreen() {

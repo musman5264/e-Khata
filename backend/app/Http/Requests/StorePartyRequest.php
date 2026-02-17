@@ -9,7 +9,7 @@ class StorePartyRequest extends ApiFormRequest
         // Convert empty strings to null for optional fields
         $this->merge(array_map(
             fn($v) => $v === '' ? null : $v,
-            $this->only(['mobile', 'email', 'address', 'city', 'khata_number', 'book_number', 'notes', 'opening_balance', 'opening_balance_type'])
+            $this->only(['mobile', 'email', 'address', 'city', 'khata_number', 'book_number', 'bill_book_name', 'bill_book_number', 'page_number', 'notes', 'opening_balance', 'opening_balance_type'])
         ));
 
         // Normalize mobile: if 11-digit local (03xx), convert to 923xx format
@@ -36,6 +36,10 @@ class StorePartyRequest extends ApiFormRequest
             'city' => 'nullable|string|max:100',
             'khata_number' => 'nullable|string|max:50',
             'book_number' => 'nullable|string|max:50',
+            'bill_book_name' => 'nullable|string|max:255',
+            'bill_book_number' => 'nullable|string|max:100',
+            'page_number' => 'nullable|string|max:50',
+            'photo_url' => 'nullable|string|max:500',
             'type' => 'required|in:customer,supplier,both',
             'opening_balance' => 'nullable|numeric|min:0',
             'opening_balance_type' => 'nullable|in:dr,cr',

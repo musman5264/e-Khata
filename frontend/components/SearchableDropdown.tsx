@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, Keyboard, Platform } from 'react-native';
-import { TextInput, Text, Surface, useTheme } from 'react-native-paper';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
+import { View, StyleSheet, FlatList, TouchableOpacity, Keyboard, Platform, Pressable } from 'react-native';
+import { TextInput, Text, Surface } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing } from '@/theme';
 
@@ -55,12 +55,12 @@ export default function SearchableDropdown({
     );
   }, [items, search]);
 
-  const handleSelect = (item: DropdownItem) => {
+  const handleSelect = useCallback((item: DropdownItem) => {
     onSelect(item);
     setSearch('');
     setOpen(false);
     Keyboard.dismiss();
-  };
+  }, [onSelect]);
 
   const handleFocus = () => {
     if (!disabled) {
@@ -71,11 +71,11 @@ export default function SearchableDropdown({
 
   const handleBlur = () => {
     // Delay to allow touch on list item
-    setTimeout(() => setOpen(false), 200);
+    setTimeout(() => setOpen(false), 250);
   };
 
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, open && styles.containerOpen, style]}>
       <TextInput
         ref={inputRef}
         label={label}
@@ -104,44 +104,53 @@ export default function SearchableDropdown({
       {error && <Text style={styles.error}>{error}</Text>}
 
       {open && (
-        <Surface style={styles.dropdown} elevation={3}>
-          {filtered.length === 0 ? (
-            <View style={styles.emptyRow}>
-              <MaterialCommunityIcons name="magnify-close" size={18} color={colors.textHint} />
-              <Text style={styles.emptyText}>No results found</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={filtered}
-              keyExtractor={(item) => String(item.value)}
-              keyboardShouldPersistTaps="handled"
-              nestedScrollEnabled
-              style={styles.list}
-              renderItem={({ item }) => {
-                const isSelected = String(item.value) === String(value);
-                return (
-                  <TouchableOpacity
-                    style={[styles.item, isSelected && styles.itemSelected]}
-                    onPress={() => handleSelect(item)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.itemLabel, isSelected && styles.itemLabelSelected]}>
-                        {item.label}
-                      </Text>
-                      {item.subtitle && (
-                        <Text style={styles.itemSubtitle}>{item.subtitle}</Text>
-                      )}
-                    </View>
-                    {isSelected && (
-                      <MaterialCommunityIcons name="check" size={18} color={colors.primary} />
-                    )}
-                  </TouchableOpacity>
-                );
-              }}
+        <>
+          {/* Backdrop to close dropdown when clicking outside */}
+          {Platform.OS === 'web' && (
+            <Pressable
+              style={styles.backdrop}
+              onPress={() => setOpen(false)}
             />
           )}
-        </Surface>
+          <Surface style={styles.dropdown} elevation={4}>
+            {filtered.length === 0 ? (
+              <View style={styles.emptyRow}>
+                <MaterialCommunityIcons name="magnify-close" size={18} color={colors.textHint} />
+                <Text style={styles.emptyText}>No results found</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={filtered}
+                keyExtractor={(item) => String(item.value)}
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled
+                style={styles.list}
+                renderItem={({ item }) => {
+                  const isSelected = String(item.value) === String(value);
+                  return (
+                    <TouchableOpacity
+                      style={[styles.item, isSelected && styles.itemSelected]}
+                      onPress={() => handleSelect(item)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.itemLabel, isSelected && styles.itemLabelSelected]}>
+                          {item.label}
+                        </Text>
+                        {item.subtitle && (
+                          <Text style={styles.itemSubtitle}>{item.subtitle}</Text>
+                        )}
+                      </View>
+                      {isSelected && (
+                        <MaterialCommunityIcons name="check" size={18} color={colors.primary} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                }}
+              />
+            )}
+          </Surface>
+        </>
       )}
     </View>
   );
@@ -150,8 +159,19 @@ export default function SearchableDropdown({
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
-    zIndex: 10,
+    zIndex: 1,
     marginBottom: spacing.md,
+  },
+  containerOpen: {
+    zIndex: 9999,
+  },
+  backdrop: {
+    position: 'fixed' as any,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9998,
   },
   input: {
     backgroundColor: '#fff',
@@ -172,10 +192,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
     maxHeight: 220,
-    zIndex: 999,
+    zIndex: 9999,
     ...Platform.select({
-      web: { boxShadow: '0 4px 16px rgba(0,0,0,0.12)' },
-      default: { elevation: 4 },
+      web: { boxShadow: '0 4px 16px rgba(0,0,0,0.15)' },
+      default: { elevation: 6 },
     }),
   },
   list: {

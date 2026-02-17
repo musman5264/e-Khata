@@ -104,6 +104,8 @@ Route::prefix('v1')->group(function () {
             // Parties
             Route::get('parties/summary', [PartyController::class, 'summary']);
             Route::apiResource('parties', PartyController::class);
+            Route::post('parties/{id}/photo', [PartyController::class, 'uploadPhoto']);
+            Route::delete('parties/{id}/photo', [PartyController::class, 'deletePhoto']);
 
             // Transactions (nested under parties)
             Route::prefix('parties/{partyId}')->group(function () {
@@ -172,7 +174,12 @@ Route::prefix('v1')->group(function () {
             // Admin Reports
             Route::get('reports/users', [SystemSettingsController::class, 'userReport']);
             Route::get('reports/businesses', [SystemSettingsController::class, 'businessReport']);
+            Route::get('reports/business/{id}', [SystemSettingsController::class, 'businessDetailReport']);
             Route::get('reports/activity', [SystemSettingsController::class, 'activityReport']);
+            Route::get('reports/financial', [SystemSettingsController::class, 'financialReport']);
+            Route::get('reports/growth', [SystemSettingsController::class, 'growthReport']);
+            Route::get('reports/payment-summary', [SystemSettingsController::class, 'paymentReport']);
+            Route::get('reports/sessions', [SystemSettingsController::class, 'sessionReport']);
 
             // User management
             Route::get('users', [SystemSettingsController::class, 'users']);
@@ -180,6 +187,8 @@ Route::prefix('v1')->group(function () {
             Route::put('users/{id}', [SystemSettingsController::class, 'updateUser']);
             Route::delete('users/{id}', [SystemSettingsController::class, 'deleteUser']);
             Route::put('users/{id}/toggle-active', [SystemSettingsController::class, 'toggleUserActive']);
+            Route::post('users/{id}/impersonate', [SystemSettingsController::class, 'impersonateUser']);
+            Route::post('impersonate/stop', [SystemSettingsController::class, 'stopImpersonation']);
 
             // Tenant/Business management
             Route::get('tenants', [SystemSettingsController::class, 'tenants']);
@@ -188,6 +197,8 @@ Route::prefix('v1')->group(function () {
             Route::delete('tenants/{id}', [SystemSettingsController::class, 'deleteTenant']);
 
             // Version management
+            Route::get('versions/history', [VersionController::class, 'history']);
+            Route::post('versions/auto-track', [VersionController::class, 'autoTrack']);
             Route::get('versions', [VersionController::class, 'index']);
             Route::post('versions', [VersionController::class, 'store']);
             Route::get('versions/{id}', [VersionController::class, 'show']);

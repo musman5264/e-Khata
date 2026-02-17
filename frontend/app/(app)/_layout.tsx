@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { Platform, View, useWindowDimensions } from 'react-native';
 import WebSidebar from '@/components/WebSidebar';
+import ImpersonationBanner from '@/components/ImpersonationBanner';
 import { colors } from '@/theme';
 
 export default function AppLayout() {
@@ -33,11 +34,17 @@ export default function AppLayout() {
       <View style={{ flex: 1, flexDirection: 'row', backgroundColor: '#F5F6FA' }}>
         <WebSidebar />
         <View style={{ flex: 1 }}>
+          <ImpersonationBanner />
           {stack}
         </View>
       </View>
     );
   }
 
-  return stack;
+  return (
+    <View style={{ flex: 1 }}>
+      <ImpersonationBanner />
+      {stack}
+    </View>
+  );
 }

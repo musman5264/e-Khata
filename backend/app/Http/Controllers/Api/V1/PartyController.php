@@ -8,6 +8,7 @@ use App\Http\Requests\UpdatePartyRequest;
 use App\Models\Party;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class PartyController extends Controller
 {
@@ -170,6 +171,56 @@ class PartyController extends Controller
                 'net' => round($totalReceivable - $totalPayable, 2),
                 'party_count' => $parties->count(),
             ],
+        ]);
+    }
+
+    /**
+     * POST /api/v1/parties/{id}/photo
+     */
+    public function uploadPhoto(Request $request, int $id): JsonResponse
+    {
+        $this->authorize('edit_party');
+
+        $request->validate([
+            'photo' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ]);
+
+        $party = Party::findOrFail($id);
+
+        // Delete old photo if exists
+        if ($party->photo_url) {
+            $oldPath = str_replace('/storage/', '', $party->photo_url);
+            Storage::disk('public')->delete($oldPath);
+        }
+
+        $path = $request->file('photo')->store('party-photos', 'public');
+        $party->update(['photo_url' => '/storage/' . $path]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Photo uploaded successfully.',
+            'data' => ['photo_url' => $party->photo_url],
+        ]);
+    }
+
+    /**
+     * DELETE /api/v1/parties/{id}/photo
+     */
+    public function deletePhoto(int $id): JsonResponse
+    {
+        $this->authorize('edit_party');
+
+        $party = Party::findOrFail($id);
+
+        if ($party->photo_url) {
+            $oldPath = str_replace('/storage/', '', $party->photo_url);
+            Storage::disk('public')->delete($oldPath);
+            $party->update(['photo_url' => null]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Photo deleted successfully.',
         ]);
     }
 }

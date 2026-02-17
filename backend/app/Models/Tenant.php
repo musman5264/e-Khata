@@ -50,6 +50,13 @@ class Tenant extends Model
             'pdf_template' => 'classic',
             'notification_defaults' => ['new_transaction' => true, 'payment' => true],
             'payment_gateways' => ['jazzcash' => true, 'easypaisa' => true],
+            // WhatsApp Direct (business-level)
+            'whatsapp_direct_enabled' => false,
+            'whatsapp_direct_number' => '',
+            'whatsapp_direct_message' => 'Hello! This is regarding your account with us.',
+            'whatsapp_direct_support_number' => '',
+            'whatsapp_direct_show_on_ledger' => true,
+            'whatsapp_direct_share_ledger' => true,
         ];
     }
 

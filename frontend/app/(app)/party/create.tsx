@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Text as RNText, Platform, useWindowDimensions } from 'react-native';
-import { TextInput, Text, Surface, Snackbar } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Text as RNText, Platform, useWindowDimensions, Image } from 'react-native';
+import { TextInput, Text, Surface, Snackbar, Avatar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import * as ImagePicker from 'expo-image-picker';
 import api from '@/services/api';
 import { colors, spacing } from '@/theme';
 import LoadingOverlay from '@/components/LoadingOverlay';
@@ -31,9 +32,13 @@ export default function CreatePartyScreen() {
     opening_balance: '',
     opening_balance_type: 'dr',
     notes: '',
+    bill_book_name: '',
+    bill_book_number: '',
+    page_number: '',
   };
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
 
   useEffect(() => {
     // Auto-focus name field on mount
@@ -100,11 +105,26 @@ export default function CreatePartyScreen() {
     if (form.city.trim()) data.city = form.city.trim();
     if (form.address.trim()) data.address = form.address.trim();
     if (form.notes.trim()) data.notes = form.notes.trim();
+    if (form.bill_book_name.trim()) data.bill_book_name = form.bill_book_name.trim();
+    if (form.bill_book_number.trim()) data.bill_book_number = form.bill_book_number.trim();
+    if (form.page_number.trim()) data.page_number = form.page_number.trim();
     if (form.opening_balance && parseFloat(form.opening_balance) > 0) {
       data.opening_balance = parseFloat(form.opening_balance);
       data.opening_balance_type = form.opening_balance_type;
     }
     mutation.mutate(data);
+  };
+
+  const pickPhoto = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setPhotoUri(result.assets[0].uri);
+    }
   };
 
   const updateField = (field: string, value: string) => {
@@ -121,6 +141,23 @@ export default function CreatePartyScreen() {
   /* ─── Shared form content ─── */
   const formContent = (
     <>
+      {/* Party Photo */}
+      <View style={s.photoSection}>
+        <TouchableOpacity onPress={pickPhoto} activeOpacity={0.7} style={s.photoWrap}>
+          {photoUri ? (
+            <Image source={{ uri: photoUri }} style={s.photoImg} />
+          ) : (
+            <View style={s.photoPlaceholder}>
+              <MaterialCommunityIcons name="camera-plus-outline" size={28} color="#B0B5C8" />
+            </View>
+          )}
+          <View style={s.photoBadge}>
+            <MaterialCommunityIcons name="pencil" size={12} color="#fff" />
+          </View>
+        </TouchableOpacity>
+        <RNText style={s.photoHint}>Tap to add party photo</RNText>
+      </View>
+
       {/* Party Type */}
       <Text style={s.sectionLabel}>PARTY TYPE</Text>
       <View style={s.typeRow}>
@@ -166,6 +203,20 @@ export default function CreatePartyScreen() {
           <Surface style={s.formCard}>
             <TextInput label={t('party.city')} value={form.city} onChangeText={(v) => updateField('city', v)} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="map-marker" />} />
             <TextInput label={t('party.address')} value={form.address} onChangeText={(v) => updateField('address', v)} multiline numberOfLines={2} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="home-outline" />} />
+          </Surface>
+
+          {/* Bill Book */}
+          <Text style={s.sectionLabel}>BILL BOOK (OPTIONAL)</Text>
+          <Surface style={s.formCard}>
+            <TextInput label="Bill Book Name" value={form.bill_book_name} onChangeText={(v) => updateField('bill_book_name', v)} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="book-open-outline" />} placeholder="e.g. Sales Book, Purchase Book" />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <TextInput label="Bill Book Number" value={form.bill_book_number} onChangeText={(v) => updateField('bill_book_number', v)} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="numeric" />} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <TextInput label="Page Number" value={form.page_number} onChangeText={(v) => updateField('page_number', v)} mode="outlined" style={s.input} outlineStyle={s.inputOutline} left={<TextInput.Icon icon="file-document-outline" />} />
+              </View>
+            </View>
           </Surface>
 
           {/* Opening Balance */}
@@ -311,6 +362,12 @@ const s = StyleSheet.create({
   saveAddText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
   optionalToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 18, paddingVertical: 10, paddingHorizontal: 4 },
   optionalToggleText: { fontSize: 13, color: '#8A8FA8', fontWeight: '500' },
+  photoSection: { alignItems: 'center', paddingVertical: 16 },
+  photoWrap: { position: 'relative' },
+  photoImg: { width: 80, height: 80, borderRadius: 40, borderWidth: 2, borderColor: '#ECEEF5' },
+  photoPlaceholder: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#F3F4F6', borderWidth: 2, borderColor: '#ECEEF5', alignItems: 'center', justifyContent: 'center' },
+  photoBadge: { position: 'absolute', bottom: 0, right: 0, width: 24, height: 24, borderRadius: 12, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
+  photoHint: { fontSize: 11, color: '#B0B5C8', marginTop: 6 },
 });
 
 /* ─── Web Styles ─── */
